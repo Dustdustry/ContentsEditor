@@ -17,7 +17,7 @@ java{
 
 ext{
     //the build number that this mod is made for
-    mindustryVersion = 'v149'
+    mindustryVersion = 'v152.2'
     minModCoreVersion = "774565478f"
     jabelVersion = "93fde537c7"
     //windows sucks
@@ -43,7 +43,6 @@ dependencies{
     }
 
     compileOnly files("libs/ContentsTweaker-3.0.3.jar")
-    implementation "com.github.MinRi2:MinModCore:$minModCoreVersion"
 
     annotationProcessor "com.github.Anuken:jabel:$jabelVersion"
 }

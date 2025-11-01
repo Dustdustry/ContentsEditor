@@ -1,7 +1,6 @@
 package MinRi2.ContentsEditor.ui.editor;
 
 import MinRi2.ContentsEditor.ui.*;
-import MinRi2.ModCore.ui.*;
 import arc.*;
 import arc.flabel.*;
 import arc.graphics.*;
@@ -23,7 +22,7 @@ import mindustry.ui.dialogs.*;
  * @author minri2
  * Create by 2024/2/17
  */
-public class PatchManager extends BaseDialog implements Addable{
+public class PatchManager extends BaseDialog{
     private static final JsonReader reader = new JsonReader();
 
     private static final Pool<Patch> patchPool = Pools.get(Patch.class, Patch::new);
@@ -63,33 +62,11 @@ public class PatchManager extends BaseDialog implements Addable{
         editor.hidden(this::savePatch);
     }
 
-    @Override
-    public void addUI(){
-        MapInfoDialog infoDialog = Reflect.get(Vars.ui.editor, "infoDialog");
-
-        infoDialog.shown(() -> Core.app.post(() -> {
-            ScrollPane pane = (ScrollPane)infoDialog.cont.getChildren().get(0);
-            Table table = Reflect.get(pane, "widget");
-
-            Table buttonTable = (Table)table.getChildren().peek();
-
-            buttonTable.row();
-
-            buttonTable.button(b -> {
-                b.add(new FLabel("{rainbow}[CT]")).pad(8f).left();
-                b.add("@contents-editor").color(EPalettes.purpleAccent1).expandX();
-            }, Styles.cleari, this::show)
-            .colspan(buttonTable.getColumns()).width(Float.NEGATIVE_INFINITY).growX();
-
-            buttonTable.row();
-        }));
-    }
-
     private void setup(){
         titleTable.clearChildren();
         cont.clearChildren();
 
-        patchContainer.background(MinTex.whiteuiRegion).setColor(EPalettes.purpleAccent1);
+        patchContainer.background(Tex.whiteui).setColor(EPalettes.purpleAccent1);
         patchTable.background(Styles.grayPanel);
 
         cont.add(patchContainer);
@@ -172,9 +149,9 @@ public class PatchManager extends BaseDialog implements Addable{
 
                     savePatch();
 
-                    UIUtils.showInfoToast("@import-patch.succeed", 3.0f, 4);
+                    EUI.infoToast("@import-patch.succeed");
                 }catch(Exception ignored){
-                    UIUtils.showInfoToast("@import-patch.failed", 3.0f, 4);
+                    EUI.infoToast("@import-patch.failed");
                 }
             }).disabled(b -> Core.app.getClipboardText() != null && Core.app.getClipboardText().isEmpty());
         }).pad(8f).padTop(4f).growX();
@@ -185,7 +162,7 @@ public class PatchManager extends BaseDialog implements Addable{
 
         int index = 0;
         for(Patch patch : patchSeq){
-            patchTable.table(MinTex.whiteuiRegion, t -> {
+            patchTable.table(Tex.whiteui, t -> {
                 t.field(patch.name, text -> patch.name = text)
                 .valid(text -> !patchSeq.contains(p -> p != patch && p.name.equals(text))).growX();
 
@@ -198,22 +175,16 @@ public class PatchManager extends BaseDialog implements Addable{
 
                         savePatch();
                         rebuildPatchTable();
-                    }).with(b -> {
-                        ElementUtils.addTooltip(b, "@patch.remove", true);
-                    });
+                    }).tooltip("@patch.remove", true);
 
                     buttons.button(Icon.copySmall, Styles.clearNonei, () -> {
                         Core.app.setClipboardText(patch.getFormattedJson());
-                        UIUtils.showInfoToast("[green]Copy: []" + patch.name, 3.0f, 4);
-                    }).with(b -> {
-                        ElementUtils.addTooltip(b, "@patch.copy", true);
-                    });
+                        EUI.infoToast("[green]Copy: []" + patch.name);
+                    }).tooltip("@patch.copy", true);
 
                     buttons.button(Icon.editSmall, Styles.clearNonei, () -> {
                         editor.edit(patch);
-                    }).with(b -> {
-                        ElementUtils.addTooltip(b, "@patch.edit", true);
-                    });
+                    }).tooltip("@patch.edit", true);
                 }).pad(4f);
 
                 t.image().width(4f).color(Color.darkGray).growY().right();

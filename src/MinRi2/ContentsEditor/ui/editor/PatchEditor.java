@@ -3,7 +3,6 @@ package MinRi2.ContentsEditor.ui.editor;
 import MinRi2.ContentsEditor.node.*;
 import MinRi2.ContentsEditor.ui.*;
 import MinRi2.ContentsEditor.ui.editor.PatchManager.*;
-import MinRi2.ModCore.ui.*;
 import arc.*;
 import arc.input.*;
 import arc.util.serialization.JsonWriter.*;
@@ -70,7 +69,7 @@ public class PatchEditor extends BaseDialog{
 
     protected void setup(){
         titleTable.clearChildren();
-        titleTable.background(MinTex.getColoredRegion(EPalettes.purpleAccent1));
+        titleTable.background(Tex.whiteui).setColor(EPalettes.purpleAccent1);
 
         titleTable.table(buttons -> {
             buttons.defaults().size(150f, 64f).pad(8f).growY();

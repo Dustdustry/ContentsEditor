@@ -3,8 +3,7 @@ package MinRi2.ContentsEditor.ui.editor;
 import MinRi2.ContentsEditor.node.*;
 import MinRi2.ContentsEditor.node.modifier.*;
 import MinRi2.ContentsEditor.ui.*;
-import MinRi2.ModCore.ui.*;
-import MinRi2.ModCore.utils.*;
+import MinRi2.ContentsEditor.ui.EUI.*;
 import arc.*;
 import arc.graphics.*;
 import arc.scene.ui.ImageButton.*;
@@ -37,7 +36,6 @@ public class NodeCard extends Table{
     private NodeData lastChildData;
 
     private String searchText = "";
-    private final DebounceTask debounceRebuild = new DebounceTask(0.15f, this::rebuildNodesTable);
 
     public NodeCard(){
         cardCont = new Table();
@@ -137,10 +135,10 @@ public class NodeCard extends Table{
     private void setupSearchTable(Table table){
         table.image(Icon.zoom).size(64f);
 
-        TextField field = table.field(searchText, text -> {
+        TextField field = table.add(EUI.deboundTextField(searchText, text -> {
             searchText = text;
-            debounceRebuild.run();
-        }).pad(8f).growX().get();
+            rebuildNodesTable();
+        })).pad(8f).growX().get();
 
         if(Core.app.isDesktop()){
             Core.scene.setKeyboardFocus(field);
@@ -219,15 +217,15 @@ public class NodeCard extends Table{
 
     private void buildTitle(Table table){
         Color titleColor = !isChild ? EPalettes.purpleAccent2 : EPalettes.purpleAccent3;
-        table.table(MinTex.getColoredRegion(titleColor), nodeTitle -> {
-            nodeTitle.table(MinTex.getColoredRegion(Pal.darkestGray), nameTable -> {
+        table.table(Tex.whiteui, nodeTitle -> {
+            nodeTitle.table(Tex.whiteui, nameTable -> {
                 NodeDisplay.display(nameTable, nodeData);
 
                 nameTable.image().width(4f).color(Color.darkGray).growY().right();
                 nameTable.row();
                 Cell<?> horizontalLine = nameTable.image().height(4f).color(Color.darkGray).growX();
                 horizontalLine.colspan(nameTable.getColumns());
-            }).size(buttonWidth, buttonHeight).pad(8f).expandX().left();
+            }).color(Pal.darkestGray).size(buttonWidth, buttonHeight).pad(8f).expandX().left();
 
             nodeTitle.table(buttonTable -> {
                 buttonTable.defaults().size(64f).pad(8f);
@@ -238,17 +236,13 @@ public class NodeCard extends Table{
                         nodeData.clearJson();
                         getFrontCard().rebuildNodesTable();
                     });
-                }).with(b -> {
-                    ElementUtils.addTooltip(b, "@node-card.clear-data", true);
-                });
+                }).tooltip("@node-card.clear-data", true);
 
                 if(parent != null){
-                    buttonTable.button(Icon.upOpen, Styles.cleari, this::extractWorking).with(b -> {
-                        ElementUtils.addTooltip(b, "@node-card.extract", false);
-                    });
+                    buttonTable.button(Icon.upOpen, Styles.cleari, this::extractWorking).tooltip("@node-card.extract", false);
                 }
             }).growY();
-        });
+        }).color(titleColor);
     }
 
     private Seq<Entry<String, CTNode>> getSortedChildren(){

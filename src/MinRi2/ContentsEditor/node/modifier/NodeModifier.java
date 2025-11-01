@@ -3,11 +3,11 @@ package MinRi2.ContentsEditor.node.modifier;
 import MinRi2.ContentsEditor.node.*;
 import MinRi2.ContentsEditor.ui.*;
 import MinRi2.ContentsEditor.ui.editor.*;
-import MinRi2.ModCore.ui.*;
 import arc.graphics.*;
 import arc.scene.actions.*;
 import arc.scene.ui.layout.*;
 import cf.wayzer.contentsTweaker.*;
+import mindustry.gen.*;
 
 /**
  * @author minri2
@@ -37,12 +37,12 @@ public class NodeModifier{
         Cell<?> horizontalLine = table.image().height(4f).color(Color.darkGray).growX();
         horizontalLine.colspan(table.getColumns());
 
-        table.background(MinTex.whiteuiRegion);
+        table.background(Tex.whiteui);
         table.setColor(modifier.isModified() ? EPalettes.modified : EPalettes.unmodified);
 
         modifier.onModified(modified -> {
             Color color = modified ? EPalettes.modified : EPalettes.unmodified;
-            table.addAction(Actions.color(color, 0.5f));
+            table.addAction(Actions.color(color, 0.2f));
         });
     }
 

@@ -1,6 +1,8 @@
 package MinRi2.ContentsEditor.ui;
 
-import MinRi2.ModCore.ui.*;
+import arc.graphics.*;
+import arc.graphics.g2d.*;
+import arc.scene.style.*;
 import arc.scene.ui.ImageButton.*;
 import arc.scene.ui.ScrollPane.*;
 import mindustry.gen.*;
@@ -18,12 +20,12 @@ public class EStyles{
 
     public static void init(){
         cardButtoni = new ImageButtonStyle(cleari){{
-            up = MinTex.getColoredRegion(EPalettes.gray);
-            down = over = MinTex.getColoredRegion(EPalettes.purpleAccent4);
+            up = colored(EPalettes.gray);
+            down = over = colored(EPalettes.purpleAccent4);
         }};
 
         cardModifiedButtoni = new ImageButtonStyle(cardButtoni){{
-            up = MinTex.getColoredRegion(EPalettes.modified);
+            up = colored(EPalettes.modified);
         }};
 
         cardGrayPane = new ScrollPaneStyle(){{
@@ -33,5 +35,10 @@ public class EStyles{
         cardPane = new ScrollPaneStyle(){{
             background = Tex.pane2;
         }};
+    }
+
+    private static TextureRegionDrawable colored(Color color){
+        TextureRegionDrawable whiteui = (TextureRegionDrawable)Tex.whiteui;
+        return ((TextureRegionDrawable)whiteui.tint(color));
     }
 }

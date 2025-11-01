@@ -2,12 +2,11 @@ package MinRi2.ContentsEditor.node.modifier;
 
 import MinRi2.ContentsEditor.node.modifier.equal.*;
 import MinRi2.ContentsEditor.ui.*;
-import MinRi2.ModCore.ui.*;
-import MinRi2.ModCore.ui.element.*;
 import arc.*;
 import arc.func.*;
 import arc.graphics.*;
 import arc.graphics.g2d.*;
+import arc.scene.actions.*;
 import arc.scene.ui.*;
 import arc.scene.ui.layout.*;
 import arc.util.*;
@@ -33,12 +32,12 @@ public interface ModifierBuilder<T>{
         // lambda????
         final boolean[] value = {consumer.getData()};
 
-        BorderColorImage image = new BorderColorImage();
-        image.colorAction(value[0] ? Color.green : Color.red);
+        BorderImage image = new BorderImage();
+        image.addAction(Actions.color(value[0] ? Color.green : Color.red, 0.3f));
 
         Cons<Boolean> setColor = bool -> {
             value[0] = bool;
-            image.colorAction(bool ? Color.green : Color.red);
+            image.addAction(Actions.color(bool ? Color.green : Color.red, 0.3f));
         };
 
         table.button(b -> {
@@ -96,9 +95,7 @@ public interface ModifierBuilder<T>{
         table.button(Icon.undo, Styles.clearNonei, () -> {
             consumer.resetModify();
             clicked.run();
-        }).width(32f).pad(4f).growY().expandX().right().visible(consumer::isModified).with(b -> {
-            ElementUtils.addTooltip(b, "@node-modifier.undo", true);
-        });
+        }).width(32f).pad(4f).growY().expandX().right().visible(consumer::isModified).tooltip("@node-modifier.undo", true);
     }
 
     /**
