@@ -1,5 +1,6 @@
 package MinRi2.ContentsEditor.ui;
 
+import arc.*;
 import arc.func.*;
 import arc.graphics.*;
 import arc.scene.ui.layout.*;
@@ -16,33 +17,30 @@ import mindustry.ui.dialogs.*;
 public class ContentSelector extends BaseDialog{
     private ContentType contentType;
     private Boolf<UnlockableContent> selectable, consumer;
-
-    private Table pane;
+    private Class<?> restrictClass;
 
     public ContentSelector(){
         super("@content-selector");
 
-        pane = new Table();
-
-        setup();
+        addCloseButton();
 
         resized(this::rebuild);
         shown(this::rebuild);
     }
 
-    private void setup(){
-        cont.pane(pane).scrollX(false).grow();
-        addCloseButton();
-    }
-
     private void rebuild(){
-        pane.clearChildren();
+        cont.clearChildren();
+
+        Table pane = new Table();
+
+        float width = Core.scene.getWidth() * (Core.scene.getWidth() > 1000 ? 0.8f : 0.95f);
+        cont.pane(pane).scrollX(false).width(width).grow();
 
         Seq<UnlockableContent> seq = Vars.content.getBy(contentType);
 
-        int index = 0;
+        int index = 0, columns = (int)(width / 360f);
         for(UnlockableContent content : seq){
-
+            if(restrictClass != null && !restrictClass.isAssignableFrom(content.getClass())) continue;
             if(!selectable.get(content)) continue;
 
             pane.button(table -> {
@@ -53,7 +51,7 @@ public class ContentSelector extends BaseDialog{
                 }
             }).pad(8f).growX();
 
-            if(++index % 5 == 0){
+            if(++index % columns == 0){
                 pane.row();
             }
         }
@@ -78,7 +76,12 @@ public class ContentSelector extends BaseDialog{
     }
 
     public void select(ContentType contentType, Boolf<UnlockableContent> selectable, Boolf<UnlockableContent> consumer){
+        select(contentType, null, selectable, consumer);
+    }
+
+    public void select(ContentType contentType, Class<?> restrictClass, Boolf<UnlockableContent> selectable, Boolf<UnlockableContent> consumer){
         this.contentType = contentType;
+        this.restrictClass = restrictClass;
         this.selectable = selectable;
         this.consumer = consumer;
 

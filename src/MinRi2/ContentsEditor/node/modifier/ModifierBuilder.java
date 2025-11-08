@@ -94,7 +94,7 @@ public abstract class ModifierBuilder<T>{
                 Class<?> dataType = consumer.getDataType();
                 ContentType contentType = NodeHelper.contentClassTypeMap.get(dataType);
 
-                EUI.selector.select(contentType, c -> c != value, c -> {
+                EUI.selector.select(contentType, consumer.getDataType(), c -> c != value, c -> {
                     setValue(c);
                     consumer.onModify(value);
                     return true;
@@ -125,7 +125,7 @@ public abstract class ModifierBuilder<T>{
 
             contentTable.image(icon).scaling(Scaling.fit).size(40f).pad(8f).expandX().left();
             contentTable.add(displayName).pad(4f).ellipsis(true).width(64f);
-        };
+        }
     }
 
     private static Button addResetButton(Table table, ModifyConsumer<?> consumer, Runnable clicked){
