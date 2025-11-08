@@ -1,0 +1,19 @@
+package MinRi2.ContentsEditor.node;
+
+import arc.util.*;
+import arc.util.serialization.Json.*;
+
+// Due to anuke's private class
+public class FieldData{
+    public @Nullable Class<?> type, elementType, keyType;
+
+    public FieldData(Class<?> type, Class<?> elementType, Class<?> keyType){
+        this.type = type;
+        this.elementType = elementType;
+        this.keyType = keyType;
+    }
+
+    public FieldData(FieldMetadata metadata){
+        this(metadata.field.getType(), metadata.elementType, metadata.keyType);
+    }
+}

@@ -3,13 +3,7 @@ package MinRi2.ContentsEditor.node;
 import arc.struct.*;
 import arc.util.*;
 import arc.util.serialization.*;
-import arc.util.serialization.Json.*;
 import arc.util.serialization.JsonValue.*;
-import mindustry.*;
-import mindustry.ctype.*;
-
-import java.lang.reflect.*;
-import java.util.*;
 
 /**
  * @author minri2
@@ -22,8 +16,7 @@ public class NodeData{
 
     public final String name;
     private final Object object; // original
-    private Object dataObject;
-    public final @Nullable FieldMetadata meta;
+    public final @Nullable FieldData meta;
     public JsonValue jsonData;
 
     public @Nullable NodeData parentData;
@@ -34,10 +27,9 @@ public class NodeData{
         this(name, object, null);
     }
 
-    private NodeData(String name, Object object, FieldMetadata meta){
+    private NodeData(String name, Object object, FieldData meta){
         this.name = name;
         this.object = object;
-        dataObject = object;
         this.meta = meta;
     }
 
@@ -59,7 +51,7 @@ public class NodeData{
 
     public ObjectMap<String, NodeData> getChildren(){
         if(!resolved){
-            NodeHelper.resolveFrom(this, getObject());
+            NodeResolver.resolveFrom(this, getObject());
             resolved = true;
         }
         return children;
@@ -69,7 +61,7 @@ public class NodeData{
         return addChild(name, object, null);
     }
 
-    public NodeData addChild(String name, Object object, FieldMetadata meta){
+    public NodeData addChild(String name, Object object, FieldData meta){
         NodeData child = new NodeData(name, object, meta);
         children.put(name, child);
         child.parentData = this;
@@ -79,10 +71,6 @@ public class NodeData{
 
     public Object getObject(){
         return object;
-    }
-
-    public Object getDataObject(){
-        return dataObject;
     }
 
     public void initJsonData(){
@@ -112,12 +100,7 @@ public class NodeData{
 
     public void setJsonData(JsonValue value){
         jsonData = value;
-        if(value == null) return;
-
-        if(value.isValue()){
-            if(meta != null) dataObject = NodeHelper.getParser().getJson().readValue(meta.field.getType(), value);
-            return;
-        }
+        if(value == null || value.isValue()) return;
 
         for(JsonValue childValue : value){
             String childName = childValue.name;

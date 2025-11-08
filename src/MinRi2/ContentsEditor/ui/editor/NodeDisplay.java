@@ -40,7 +40,7 @@ public class NodeDisplay{
         NodeDisplay.node = node;
     }
 
-    public static void reset(){
+    private static void reset(){
         table = null;
         node = null;
     }
@@ -61,18 +61,8 @@ public class NodeDisplay{
 
     public static void displayNameType(Table table, NodeData node){
         set(table, node);
-
-        if(node.getObject() == null){
-            displayName();
-            return;
-        }
-
         displayNameType();
         reset();
-    }
-
-    private static void displayName(){
-        table.add(node.name).wrap().width(labelWidth).pad(4f).expandX().left();
     }
 
     private static void displayObject(Object object){

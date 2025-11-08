@@ -167,7 +167,7 @@ public class NodeCard extends Table{
                 }
             }
 
-            BaseModifier<?> modifier = NodeModifier.getModifier(child);
+            DataModifier<?> modifier = NodeModifier.getModifier(child);
             if(modifier != null && !(nodeData.depth < 2 && nodeData.getObject() instanceof ContentType)){
                 addEditTable(nodesTable, child, modifier);
             }else{
@@ -180,7 +180,7 @@ public class NodeCard extends Table{
         }
     }
 
-    private void addEditTable(Table table, NodeData childData, BaseModifier<?> modifier){
+    private void addEditTable(Table table, NodeData childData, DataModifier<?> modifier){
         table.table(t -> {
             t.table(infoTable -> {
                 // Add node info

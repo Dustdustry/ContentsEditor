@@ -1,23 +1,12 @@
 package MinRi2.ContentsEditor.node.modifier;
 
 import MinRi2.ContentsEditor.node.*;
-import MinRi2.ContentsEditor.node.modifier.BaseModifier.*;
 import MinRi2.ContentsEditor.node.modifier.equal.*;
-import MinRi2.ContentsEditor.node.modifier.equal.EqualModifier.*;
-import MinRi2.ContentsEditor.ui.*;
-import MinRi2.ContentsEditor.ui.editor.*;
 import arc.func.*;
-import arc.graphics.*;
-import arc.scene.actions.*;
-import arc.scene.ui.layout.*;
 import arc.struct.*;
 import arc.util.pooling.*;
-import mindustry.ctype.*;
-import mindustry.gen.*;
 import mindustry.type.*;
 import mindustry.world.*;
-
-import java.lang.reflect.*;
 
 /**
  * @author minri2
@@ -41,7 +30,7 @@ public class NodeModifier{
         );
     }
 
-    public static BaseModifier<?> getModifier(NodeData node){
+    public static DataModifier<?> getModifier(NodeData node){
         for(ModifierConfig config : modifyConfig){
             if(config.canModify(node)) return config.getModifier(node);
         }
@@ -59,10 +48,10 @@ public class NodeModifier{
 
     public static class ModifierConfig{
         public final Seq<Class<?>> modifierTypes = new Seq<>();
-        private final Pool<BaseModifier<?>> pool;
+        private final Pool<DataModifier<?>> pool;
 
         @SuppressWarnings("unchecked")
-        public ModifierConfig(Class<? extends BaseModifier<?>> clazz, Prov<? extends BaseModifier<?>> prov, Class<?>... types){
+        public ModifierConfig(Class<? extends DataModifier<?>> clazz, Prov<? extends DataModifier<?>> prov, Class<?>... types){
             pool = Pools.get((Class)clazz, prov);
             modifierTypes.addAll(types);
         }
@@ -71,8 +60,8 @@ public class NodeModifier{
             return modifierTypes.contains(NodeHelper.getType(node));
         }
 
-        public BaseModifier<?> getModifier(NodeData nodeData){
-            BaseModifier<?> modifier = pool.obtain();
+        public DataModifier<?> getModifier(NodeData nodeData){
+            DataModifier<?> modifier = pool.obtain();
             modifier.setNodeData(nodeData);
             return modifier;
         }

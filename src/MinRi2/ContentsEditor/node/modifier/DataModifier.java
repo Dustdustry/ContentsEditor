@@ -10,24 +10,23 @@ import arc.util.serialization.JsonValue.*;
 import java.util.*;
 
 /**
+ * 编辑器内提供便捷的修改方式，仅限值修改或者增删数据，不用于实现对象的修改
  * @author minri2
  * Create by 2024/4/4
  */
-public abstract class BaseModifier<T> implements ModifyConsumer<T>, Poolable{
+public abstract class DataModifier<T> implements ModifyConsumer<T>, Poolable{
     protected ModifierBuilder<T> builder;
     protected ValueType valueType;
     protected NodeData nodeData;
     private Boolc onModified;
 
     public void build(Table table){
-        builder.build(table, this);
+        builder.build(table);
     }
 
     public void onModified(Boolc onModified){
         this.onModified = onModified;
     }
-
-    public abstract JsonValue getJsonValue();
 
     public T getDefaultValue(){
         return cast(nodeData.getObject());
@@ -40,13 +39,6 @@ public abstract class BaseModifier<T> implements ModifyConsumer<T>, Poolable{
     protected boolean isModified(T value){
         return !Objects.equals(getDefaultValue(), value);
     }
-
-    /**
-     * 将数据保存
-     * 由子类实现
-     * @param jsonData 保存到的JsonValue
-     */
-    protected abstract void setDataJson(JsonValue jsonData, T value);
 
     /**
      * 给定类型 判断数据是否符合类型
@@ -68,7 +60,7 @@ public abstract class BaseModifier<T> implements ModifyConsumer<T>, Poolable{
 
     @Override
     public boolean isModified(){
-        return isModified(getValue());
+        return !Objects.equals(getValue(), getDefaultValue());
     }
 
     @Override
@@ -83,7 +75,7 @@ public abstract class BaseModifier<T> implements ModifyConsumer<T>, Poolable{
             return getDefaultValue();
         }
 
-        return cast(nodeData.getDataObject());
+        return cast(PatchJsonIO.readData(nodeData));
     }
 
     @Override
@@ -92,7 +84,7 @@ public abstract class BaseModifier<T> implements ModifyConsumer<T>, Poolable{
 
         boolean modified = isModified(value);
         if(modified){
-            setDataJson(getJsonValue(), value);
+            nodeData.jsonData.set(PatchJsonIO.getKeyName(value));
 
             if(onModified != null){
                 onModified.get(true);

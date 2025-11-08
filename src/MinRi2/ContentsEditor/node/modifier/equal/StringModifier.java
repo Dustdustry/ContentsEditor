@@ -1,7 +1,6 @@
 package MinRi2.ContentsEditor.node.modifier.equal;
 
 import MinRi2.ContentsEditor.node.modifier.*;
-import arc.util.serialization.*;
 import arc.util.serialization.JsonValue.*;
 
 /**
@@ -10,13 +9,8 @@ import arc.util.serialization.JsonValue.*;
  */
 public class StringModifier extends EqualModifier<String>{
     public StringModifier(){
-        builder = ModifierBuilder.textBuilder;
+        builder = new ModifierBuilder.TextBuilder(this);
         valueType = ValueType.stringValue;
-    }
-
-    @Override
-    protected void setDataJson(JsonValue jsonData, String value){
-        jsonData.set(value);
     }
 
     @Override

@@ -1,8 +1,7 @@
 package MinRi2.ContentsEditor.node.modifier;
 
-import MinRi2.ContentsEditor.node.modifier.equal.*;
+import MinRi2.ContentsEditor.node.*;
 import MinRi2.ContentsEditor.ui.*;
-import arc.*;
 import arc.func.*;
 import arc.graphics.*;
 import arc.graphics.g2d.*;
@@ -14,92 +13,125 @@ import mindustry.ctype.*;
 import mindustry.gen.*;
 import mindustry.ui.*;
 
-public interface ModifierBuilder<T>{
-    ModifierBuilder<String> textBuilder = (table, consumer) -> {
-        // lambda????
-        final String[] value = {consumer.getValue()};
+public abstract class ModifierBuilder<T>{
+    protected T value;
+    protected Button resetButton;
+    protected final ModifyConsumer<T> consumer;
 
-        TextField field = table.field(value[0], consumer::onModify)
-        .valid(consumer::checkValue).pad(4f).width(100f).get();
-
-        addResetButton(table, consumer, () -> {
-            value[0] = consumer.getValue();
-            field.setText(value[0]);
-        });
-    };
-
-    ModifierBuilder<Boolean> booleanBuilder = (table, consumer) -> {
-        // lambda????
-        final boolean[] value = {consumer.getValue()};
-
-        BorderImage image = new BorderImage();
-        image.addAction(Actions.color(value[0] ? Color.green : Color.red, 0.3f));
-
-        Cons<Boolean> setColor = bool -> {
-            value[0] = bool;
-            image.addAction(Actions.color(bool ? Color.green : Color.red, 0.3f));
-        };
-
-        table.button(b -> {
-            b.add(image).size(32f).pad(8f).expandX().left();
-            b.label(() -> value[0] ? "[green]true" : "[red]false").expandX();
-        }, Styles.clearNonei, () -> {
-            setColor.get(!value[0]);
-            consumer.onModify(value[0]);
-        }).grow();
-
-        addResetButton(table, consumer, () -> setColor.get(consumer.getValue()));
-    };
-
-    ModifierBuilder<UnlockableContent> contentBuilder = (table, consumer) -> {
-        // lambda????
-        final UnlockableContent[] value = {null};
-        final @SuppressWarnings("unchecked") Cons<UnlockableContent>[] setValue = new Cons[1];
-
-        table.button(b -> {
-            setValue[0] = c -> {
-                value[0] = c;
-
-                b.clearChildren();
-
-                TextureRegion icon;
-                String displayName;
-                if(value[0] == null){
-                    icon = Core.atlas.find("error");
-                    displayName = "null";
-                }else{
-                    icon = value[0].uiIcon;
-                    displayName = value[0].localizedName;
-                }
-
-                b.image(icon).scaling(Scaling.fit).size(40f).pad(8f).expandX().left();
-                b.add(displayName).pad(4f).ellipsis(true).width(64f);
-            };
-
-            setValue[0].get(consumer.getValue());
-        }, Styles.clearNonei, () -> {
-            Class<?> dataType = consumer.getDataType();
-            ContentType contentType = ContentTypeModifier.contentClassTypeMap.get(dataType);
-
-            EUI.selector.select(contentType, c -> c != value[0], c -> {
-                setValue[0].get(c);
-                consumer.onModify(value[0]);
-                return true;
-            });
-        }).grow();
-
-        addResetButton(table, consumer, () -> setValue[0].get(consumer.getValue()));
-    };
-
-    static void addResetButton(Table table, ModifyConsumer<?> consumer, Runnable clicked){
-        table.button(Icon.undo, Styles.clearNonei, () -> {
-            consumer.resetModify();
-            clicked.run();
-        }).width(32f).pad(4f).growY().expandX().right().visible(consumer::isModified).tooltip("@node-modifier.undo", true);
+    public ModifierBuilder(ModifyConsumer<T> consumer){
+        this.consumer = consumer;
     }
 
-    /**
-     * 构建UI，提供修改结果
-     */
-    void build(Table table, ModifyConsumer<T> consumer);
+    public void build(Table table){
+        value = consumer.getValue();
+    }
+
+    public static class TextBuilder extends ModifierBuilder<String>{
+
+        public TextBuilder(ModifyConsumer<String> consumer){
+            super(consumer);
+        }
+
+        @Override
+        public void build(Table table){
+            super.build(table);
+
+            TextField field = table.field(value, t -> {
+                consumer.onModify(t);
+                resetButton.visible = consumer.isModified();
+            }).valid(consumer::checkValue).pad(4f).width(100f).get();
+
+            resetButton = addResetButton(table, consumer, () -> {
+                value = consumer.getValue();
+                field.setText(value);
+            });
+        }
+    };
+
+    public static class BooleanBuilder extends ModifierBuilder<Boolean>{
+
+        public BooleanBuilder(ModifyConsumer<Boolean> consumer){
+            super(consumer);
+        }
+
+        @Override
+        public void build(Table table){
+            super.build(table);
+
+            BorderImage image = new BorderImage();
+            image.addAction(Actions.color(value ? Color.green : Color.red, 0.3f));
+
+            Cons<Boolean> setColor = bool -> {
+                value = bool;
+                image.addAction(Actions.color(bool ? Color.green : Color.red, 0.3f));
+                resetButton.visible = consumer.isModified();
+            };
+
+            table.button(b -> {
+                b.add(image).size(32f).pad(8f).expandX().left();
+                b.label(() -> value ? "[green]true" : "[red]false").expandX();
+            }, Styles.clearNonei, () -> {
+                setColor.get(!value);
+                consumer.onModify(value);
+            }).grow();
+
+            resetButton = addResetButton(table, consumer, () -> setColor.get(consumer.getValue()));
+        }
+    }
+
+    public static class ContentBuilder extends ModifierBuilder<UnlockableContent>{
+        protected Table contentTable;
+
+        public ContentBuilder(ModifyConsumer<UnlockableContent> consumer){
+            super(consumer);
+        }
+
+        @Override
+        public void build(Table table){
+            super.build(table);
+
+            contentTable = table.button(b -> {}, Styles.clearNonei, () -> {
+                Class<?> dataType = consumer.getDataType();
+                ContentType contentType = NodeHelper.contentClassTypeMap.get(dataType);
+
+                EUI.selector.select(contentType, c -> c != value, c -> {
+                    setValue(c);
+                    consumer.onModify(value);
+                    return true;
+                });
+            }).grow().get();
+
+            resetButton = addResetButton(table, consumer, () -> setValue(consumer.getValue()));
+            setValue(consumer.getValue());
+        }
+
+        private void setValue(UnlockableContent value){
+            this.value = value;
+            resetButton.visible = consumer.isModified();
+
+            if(contentTable == null) return;
+
+            contentTable.clearChildren();
+
+            TextureRegion icon;
+            String displayName;
+            if(value == null){
+                icon = Icon.none.getRegion();
+                displayName = "null";
+            }else{
+                icon = value.uiIcon;
+                displayName = value.localizedName;
+            }
+
+            contentTable.image(icon).scaling(Scaling.fit).size(40f).pad(8f).expandX().left();
+            contentTable.add(displayName).pad(4f).ellipsis(true).width(64f);
+        };
+    }
+
+    private static Button addResetButton(Table table, ModifyConsumer<?> consumer, Runnable clicked){
+        return table.button(Icon.undo, Styles.clearNonei, () -> {
+            consumer.resetModify();
+            clicked.run();
+        }).width(32f).pad(4f).growY().expandX().right().visible(consumer::isModified).tooltip("@node-modifier.undo", true).get();
+    }
 }
