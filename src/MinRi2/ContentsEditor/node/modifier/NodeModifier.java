@@ -5,6 +5,8 @@ import MinRi2.ContentsEditor.node.modifier.equal.*;
 import arc.func.*;
 import arc.struct.*;
 import arc.util.pooling.*;
+import mindustry.*;
+import mindustry.ctype.*;
 import mindustry.type.*;
 import mindustry.world.*;
 
@@ -14,6 +16,7 @@ import mindustry.world.*;
  */
 public class NodeModifier{
     public static final Seq<ModifierConfig> modifyConfig = new Seq<>();
+    public static final ObjectMap<Class<?>, Object> exampleMap = new ObjectMap<>();
 
     static {
         modifyConfig.addAll(
@@ -51,7 +54,63 @@ public class NodeModifier{
     }
 
     public static boolean canModify(NodeData node){
-        return node.getChildren().containsKey(ModifierSign.MODIFY.sign);
+        return node.getSign(ModifierSign.MODIFY) != null;
+    }
+
+    public static boolean hasCustomChild(NodeData signNode){
+        if(!signNode.isSign()) return false;
+
+        NodeData node = signNode.parentData;
+        return PatchJsonIO.isArray(node) || PatchJsonIO.isMap(node);
+    }
+
+    public static NodeData addCustomChild(NodeData signNode){
+        if(!hasCustomChild(signNode)) return null;
+
+        Object object = signNode.parentData.getObject();
+
+        int nextIndex = -1;
+        if(object instanceof Object[] arr){
+            nextIndex = arr.length;
+        }else if(object instanceof Seq<?> seq){
+            nextIndex = seq.size;
+        }else if(object instanceof ObjectSet<?> set){
+            nextIndex = set.size;
+        }
+
+        FieldData meta = signNode.meta;
+        if(nextIndex != -1){
+            int index = nextIndex + signNode.getChildren().size;
+            signNode.getJson("" + index); // init child's json
+            return signNode.addChild("" + index, getExample(meta.elementType), new FieldData(meta.elementType, null, null));
+        }
+
+        if(object instanceof ObjectMap<?,?>){
+            String name = "<key>";
+            if(MappableContent.class.isAssignableFrom(meta.keyType)){
+                ContentType contentType = PatchJsonIO.contentClassTypeMap.get(meta.keyType);
+                if(contentType != null){
+                    name = PatchJsonIO.getKeyName(Vars.content.getBy(contentType).first());
+                }
+            }
+            return signNode.addChild(name, getExample(meta.elementType), meta);
+        }
+
+        return null;
+    }
+
+    public static Object getExample(Class<?> type){
+        Object example = exampleMap.get(type);
+        if(example != null) return example;
+
+        try{
+            example = type.getConstructor().newInstance();
+        }catch(Exception e){
+            return null;
+        }
+
+        exampleMap.put(type, example);
+        return example;
     }
 
     public static class ModifierConfig{
@@ -65,7 +124,7 @@ public class NodeModifier{
         }
 
         public boolean canModify(NodeData node){
-            return modifierTypes.contains(NodeHelper.getType(node));
+            return modifierTypes.contains(PatchJsonIO.getType(node));
         }
 
         public DataModifier<?> getModifier(NodeData nodeData){

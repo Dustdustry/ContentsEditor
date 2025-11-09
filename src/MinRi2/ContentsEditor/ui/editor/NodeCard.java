@@ -182,12 +182,9 @@ public class NodeCard extends Table{
             }
         }
 
+
         NodeData plusData = nodeData.getSign(ModifierSign.PLUS);
         if(plusData != null) addPlusButton(nodesTable, plusData);
-
-        if(++index % columns == 0){
-            nodesTable.row();
-        }
     }
 
     private void addEditTable(Table table, NodeData childData, DataModifier<?> modifier){
@@ -215,7 +212,12 @@ public class NodeCard extends Table{
     }
 
     private void addChildButton(Table table, NodeData childData){
-        ImageButtonStyle style = nodeData.hasJsonChild(childData.name) ? EStyles.cardModifiedButtoni : EStyles.cardButtoni;
+        ImageButtonStyle style = EStyles.cardButtoni;
+        if(childData.parentData != null && childData.parentData.isSign()){
+            style = EStyles.addButtoni;
+        }else if(nodeData.hasJsonChild(childData.name)){
+            style = EStyles.cardModifiedButtoni;
+        }
 
         table.button(b -> {
             b.table(infoTable -> {
@@ -246,7 +248,8 @@ public class NodeCard extends Table{
             Cell<?> horizontalLine = b.image().height(4f).color(Color.darkGray).growX();
             horizontalLine.colspan(b.getColumns());
         }, EStyles.addButtoni, () -> {
-            editChildNode(plusData);
+            NodeModifier.addCustomChild(plusData);
+            rebuildNodesTable();
         });
     }
 
@@ -300,7 +303,13 @@ public class NodeCard extends Table{
         }
 
         sortedChildren.clear();
-        nodeData.getChildren().values().toSeq(sortedChildren);
+        sortedChildren.set(nodeData.getChildren());
+
+        for(NodeData child : sortedChildren){
+            if(child.isSign()){
+                sortedChildren.addAll(child.getChildren());
+            }
+        }
 
         sortedChildren.sort(Structs.comps(
             Structs.comparingBool(n -> n.jsonData == null),

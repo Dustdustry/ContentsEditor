@@ -11,6 +11,11 @@ public class FieldData{
         this.type = type;
         this.elementType = elementType;
         this.keyType = keyType;
+
+        // fix FieldMetaData
+        if(elementType == null && type.isArray()){
+            this.elementType = type.getComponentType();
+        }
     }
 
     public FieldData(FieldMetadata metadata){

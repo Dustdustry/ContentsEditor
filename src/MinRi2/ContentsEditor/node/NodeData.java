@@ -5,6 +5,8 @@ import arc.struct.ObjectMap.*;
 import arc.util.*;
 import arc.util.serialization.*;
 import arc.util.serialization.JsonValue.*;
+import mindustry.mod.*;
+import org.w3c.dom.*;
 
 /**
  * @author minri2
@@ -21,7 +23,9 @@ public class NodeData{
     public JsonValue jsonData;
 
     public @Nullable NodeData parentData;
-    private final OrderedMap<String, NodeData> children = new OrderedMap<>();
+    private final Seq<NodeData> children = new Seq<>();
+
+    private final boolean isSign;
     private boolean resolved;
 
     private NodeData(String name, Object object){
@@ -32,11 +36,13 @@ public class NodeData{
         this.name = name;
         this.object = object;
         this.meta = meta;
+
+        isSign = Structs.contains(ModifierSign.all, sign -> sign.sign.equals(name));
     }
 
     public static NodeData getRootData(){
         if(rootData == null){
-            rootData = new NodeData("root", NodeHelper.getRootObj());
+            rootData = new NodeData("root", Reflect.get(ContentPatcher.class, "root"));
             rootData.initJsonData();
         }
         return rootData;
@@ -47,7 +53,35 @@ public class NodeData{
     }
 
     public boolean isSign(){
-        return Structs.contains(ModifierSign.all, sign -> sign.sign.equals(name));
+        return isSign;
+    }
+
+    public Seq<NodeData> getChildren(){
+        if(!resolved){
+            NodeResolver.resolveFrom(this, getObject());
+            resolved = true;
+        }
+        return children;
+    }
+
+    public NodeData getChild(String name){
+        return getChildren().find(c -> c.name.equals(name));
+    }
+
+    public NodeData addChild(String name, Object object){
+        return addChild(name, object, null);
+    }
+
+    public NodeData addChild(String name, Object object, FieldData meta){
+        NodeData child = new NodeData(name, object, meta);
+        children.add(child);
+        child.parentData = this;
+        child.depth = depth + 1;
+        return child;
+    }
+
+    public Object getObject(){
+        return object;
     }
 
     public boolean hasSign(){
@@ -59,31 +93,7 @@ public class NodeData{
     }
 
     public NodeData getSign(ModifierSign sign){
-        return getChildren().get(sign.sign);
-    }
-
-    public ObjectMap<String, NodeData> getChildren(){
-        if(!resolved){
-            NodeResolver.resolveFrom(this, getObject());
-            resolved = true;
-        }
-        return children;
-    }
-
-    public NodeData addChild(String name, Object object){
-        return addChild(name, object, null);
-    }
-
-    public NodeData addChild(String name, Object object, FieldData meta){
-        NodeData child = new NodeData(name, object, meta);
-        children.put(name, child);
-        child.parentData = this;
-        child.depth = depth + 1;
-        return child;
-    }
-
-    public Object getObject(){
-        return object;
+        return getChild(sign.sign);
     }
 
     public void initJsonData(){
@@ -105,6 +115,9 @@ public class NodeData{
         }
 
         ValueType type = ValueType.object;
+        if(name.equals(ModifierSign.PLUS.sign) && PatchJsonIO.isArray(this)){
+            type = ValueType.array;
+        }
 
         data = new JsonValue(type);
         addChildValue(jsonData, name, data);
@@ -112,6 +125,8 @@ public class NodeData{
     }
 
     public void setJsonData(JsonValue value){
+        clearDynamicChildren();
+
         jsonData = value;
         if(value == null || value.isValue()) return;
 
@@ -130,7 +145,7 @@ public class NodeData{
 
             String[] childrenName = childName.split("\\.");
             for(String name : childrenName){
-                NodeData childData = current.getChildren().get(name);
+                NodeData childData = current.getChild(name);
                 if(childData == null){
                     Log.warn("Couldn't resolve @.@", current.name, name);
                     return;
@@ -151,16 +166,17 @@ public class NodeData{
         // keep tree clean
         if(jsonData.child == null && parentData != null){
             parentData.removeJson(this.name);
+            clearDynamicChildren();
             jsonData = null;
         }
     }
 
     public void clearJson(){
-        for(var entry : children){
-            NodeData childNodeData = entry.value;
+        clearDynamicChildren();
 
-            if(childNodeData.jsonData != null){
-                childNodeData.clearJson();
+        for(var child : children){
+            if(child.jsonData != null){
+                child.clearJson();
             }
         }
 
@@ -172,6 +188,17 @@ public class NodeData{
 
     public boolean hasJsonChild(String name){
         return jsonData != null && jsonData.has(name);
+    }
+
+    private void clearDynamicChildren(){
+        if(jsonData != null && !jsonData.isValue() && jsonData.size > 0){
+            for(var child : getChildren()){
+                if(child.isSign()){
+                    // clear sign's dynamic children
+                    child.children.clear();
+                }
+            }
+        }
     }
 
     /**
