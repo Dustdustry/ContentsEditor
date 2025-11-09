@@ -10,6 +10,8 @@ import mindustry.type.*;
 import mindustry.world.*;
 
 public class PatchJsonIO{
+    public static final int simplifySingleCount = 3;
+
     private static ContentParser parser;
     private static ObjectMap<String, ContentType> nameToType;
 
@@ -71,5 +73,50 @@ public class PatchJsonIO{
         Class<?> clazz = node.getObject().getClass();
         while(clazz.isAnonymousClass()) clazz = clazz.getSuperclass();
         return clazz;
+    }
+
+    public static JsonValue transformPatch(JsonValue value){
+        if(ModifierSign.PLUS.sign.equals(value.name)){
+            JsonValue fieldData = value.parent;
+            fieldData.remove(value.name);
+
+            JsonValue parent = fieldData.parent;
+            if(fieldData.size == 0) parent.remove(fieldData.name);
+
+            parent.addChild(fieldData.name + "." + value.name, value);
+        }
+
+        for(JsonValue child : value){
+            transformPatch(child);
+        }
+        return value;
+    }
+
+    public static JsonValue simplifyPatch(JsonValue value){
+        int singleCount = 0;
+        JsonValue singleEnd = value;
+        while(singleEnd.child != null && singleEnd.size == 1 && !singleEnd.isValue()){
+            singleEnd = singleEnd.child;
+            singleCount++;
+        }
+
+        if(singleCount >= simplifySingleCount){
+            StringBuilder name = new StringBuilder();
+            JsonValue current = value;
+            while(true){
+                name.append(current.name);
+                current = current.child;
+                if(current != singleEnd) name.append("."); // dot syntax
+                else break;
+            }
+
+            value.setName(name.toString());
+            value.child = singleEnd;
+        }
+
+        for(JsonValue child : value){
+            simplifyPatch(child);
+        }
+        return value;
     }
 }

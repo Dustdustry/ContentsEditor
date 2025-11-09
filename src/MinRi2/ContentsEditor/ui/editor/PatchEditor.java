@@ -13,6 +13,8 @@ import mindustry.mod.ContentPatcher.*;
 import mindustry.ui.*;
 import mindustry.ui.dialogs.*;
 
+import javax.sound.midi.*;
+
 /**
  * @author minri2
  * Create by 2024/2/15
@@ -33,7 +35,10 @@ public class PatchEditor extends BaseDialog{
 
         resized(this::rebuild);
         shown(this::rebuild);
-        hidden(() -> editPatch.patch = rootData.jsonData.toJson(OutputType.json));
+        hidden(() -> {
+            JsonValue data = PatchJsonIO.transformPatch(rootData.jsonData);
+            editPatch.patch = PatchJsonIO.simplifyPatch(data).toJson(OutputType.json);
+        });
 
         update(() -> {
             if(Core.scene.getDialog() == this
