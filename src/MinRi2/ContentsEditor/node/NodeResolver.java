@@ -6,13 +6,11 @@ import arc.graphics.*;
 import arc.graphics.g2d.*;
 import arc.struct.*;
 import arc.util.*;
-import arc.util.serialization.Json.*;
 import mindustry.*;
 import mindustry.ctype.*;
 import mindustry.mod.*;
 
 import java.lang.reflect.*;
-import java.util.*;
 
 public class NodeResolver{
     private static final Seq<Class<?>> resolveBlacklist = Seq.with(
@@ -20,12 +18,14 @@ public class NodeResolver{
     );
 
     public static void resolveFrom(NodeData node, Object object){
-        if(object == null) return; // ignore null?
+        resolveFrom(node, object, PatchJsonIO.getType(node));
+    }
 
-        if(object == NodeHelper.getRootObj()){
+    public static void resolveFrom(NodeData node, @Nullable Object object, Class<?> clazz){
+        if(node.isRoot()){
             node.addChild("name", "root", new FieldData(String.class, null, null))
             .addChild(ModifierSign.MODIFY.sign, null);
-            var map = NodeHelper.getNameToType();
+            var map = PatchJsonIO.getNameToType();
             for(ContentType ctype : ContentType.all){
                 if(map.containsValue(ctype, true)){
                     node.addChild(map.findKey(ctype, true), ctype, new FieldData(ContentType.class, ctype.contentClass, null));
@@ -34,9 +34,13 @@ public class NodeResolver{
             return;
         }
 
+        if(node.isSign()) return;
         if(object instanceof MapEntry<?,?> entry){
             object = entry.value;
+            clazz = object.getClass();
         }
+
+        if(clazz == null || clazz.isPrimitive() || clazz.isInterface() || Reflect.isWrapper(clazz)) return;
 
         FieldData meta = node.meta;
         if(object instanceof Object[] arr){
@@ -47,7 +51,8 @@ public class NodeResolver{
                 String name = "" + i++;
                 node.addChild(name, o);
             }
-            node.addChild(ModifierSign.PLUS.sign, null, meta); // extend field meta
+            FieldData signMeta = meta == null ? null : new FieldData(null, meta.elementType, null);
+            node.addChild(ModifierSign.PLUS.sign, null, signMeta);
         }else if(object instanceof Seq<?> seq){
             if(meta != null && typeBlack(meta.elementType)) return;
 
@@ -72,11 +77,12 @@ public class NodeResolver{
             if(meta != null && typeBlack(meta.elementType)) return;
 
             FieldData childMeta = meta == null ? null : new FieldData(meta.elementType, meta.elementType, meta.keyType);
+            FieldData signMeta = meta == null ? null : new FieldData(null, meta.elementType, meta.keyType);
             for(var entry : map){
                 String name = PatchJsonIO.getKeyName(entry.key);
                 NodeData child = node.addChild(name, new MapEntry<>(entry), childMeta);
-                if(meta != null){
-                    child.addChild(ModifierSign.REMOVE.sign, null, childMeta);
+                if(signMeta != null){
+                    child.addChild(ModifierSign.REMOVE.sign, null, signMeta);
                 }
             }
             // unaccessible
@@ -94,11 +100,11 @@ public class NodeResolver{
                 node.addChild(name, entry.value);
             }
         }else{
-            for(var entry : NodeHelper.getFields(object.getClass())){
+            for(var entry : PatchJsonIO.getFields(clazz)){
                 String name = entry.key;
                 Field field = entry.value.field;
                 if(!fieldEditable(field)) continue;
-                Object childObj = Reflect.get(object, field);
+                Object childObj = object == null ? null : Reflect.get(object, field);
                 NodeData child = node.addChild(name, childObj, new FieldData(entry.value));
 
                 // not array or map

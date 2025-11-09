@@ -102,7 +102,7 @@ public class NodeDisplay{
             Class<?> type = NodeHelper.getType(node);
             String typeName = type == null ? "unknown" : type.getSimpleName();
 
-            nodeInfoTable.add(node.name).ellipsis(true).tooltip(node.name);
+            nodeInfoTable.add(node.name).wrap().tooltip(node.name);
             nodeInfoTable.row();
             nodeInfoTable.add(typeName).fontScale(0.85f).color(EPalettes.type).ellipsis(true).padTop(4f).tooltip(typeName);
         });
@@ -118,7 +118,7 @@ public class NodeDisplay{
 
             valueTable.image(icon).scaling(Scaling.fit).size(Vars.iconLarge);
             valueTable.row();
-            valueTable.add(value).labelAlign(Align.right).ellipsis(true).padTop(4f).width(labelWidth);
+            valueTable.add(value).labelAlign(Align.right).ellipsis(true).padTop(8f).width(labelWidth);
         });
     }
 }

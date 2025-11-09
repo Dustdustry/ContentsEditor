@@ -90,7 +90,7 @@ public class PatchManager extends BaseDialog{
                 String text = Core.app.getClipboardText();
 
                 try{
-                    JsonValue value = NodeHelper.getParser().getJson().fromJson(null, Jval.read(text).toString(Jformat.plain));
+                    JsonValue value = PatchJsonIO.getParser().getJson().fromJson(null, Jval.read(text).toString(Jformat.plain));
                     patches.add(new PatchSet(text, value));
                     savePatch();
 
