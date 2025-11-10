@@ -43,6 +43,7 @@ public class NodeResolver{
         if(node.isRoot()){
             node.addChild("name", "root", new FieldData(String.class, null, null))
             .addChild(ModifierSign.MODIFY.sign, null);
+
             var map = PatchJsonIO.getNameToType();
             for(ContentType ctype : ContentType.all){
                 if(map.containsValue(ctype, true)){

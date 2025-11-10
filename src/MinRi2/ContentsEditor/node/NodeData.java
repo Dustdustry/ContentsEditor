@@ -18,14 +18,15 @@ public class NodeData{
     public final String name;
     private final Object object; // original
     public final @Nullable FieldData meta;
-    public JsonValue jsonData;
+
+    private JsonValue jsonData;
 
     public @Nullable NodeData parentData;
+
     private final Seq<NodeData> children = new Seq<>();
-
     private final boolean isSign;
-    private boolean resolved;
 
+    private boolean resolved;
     private NodeData(String name, Object object){
         this(name, object, null);
     }
@@ -86,6 +87,10 @@ public class NodeData{
         return object;
     }
 
+    public JsonValue getJsonData(){
+        return jsonData;
+    }
+
     public boolean hasSign(){
         return Structs.contains(ModifierSign.all, this::hasSign);
     }
@@ -100,72 +105,58 @@ public class NodeData{
 
     public void initJsonData(){
         if(jsonData != null) return;
-        if(parentData == null){
-            jsonData = new JsonValue(ValueType.object);
-        }else{
-            jsonData = parentData.createChildData(name);
-        }
-    }
 
-    public JsonValue createChildData(String name){
-        initJsonData();
+        ValueType type = name.equals(ModifierSign.PLUS.sign) && PatchJsonIO.isArray(this) ? ValueType.array : ValueType.object;
+        jsonData = new JsonValue(type);
+        if(!isRoot()) jsonData.setName(name);
 
-        ValueType type = ValueType.object;
-        if(name.equals(ModifierSign.PLUS.sign) && PatchJsonIO.isArray(this)){
-            type = ValueType.array;
-        }
-
-        JsonValue data = new JsonValue(type);
-        PatchJsonIO.addChildValue(jsonData, name, data);
-        return data;
-    }
-
-    public void setJsonData(JsonValue data){
-        if(parentData == null){
-            jsonData = data;
-            return;
-        }
-
-        parentData.initJsonData();
-        if(jsonData == null){
-            PatchJsonIO.addChildValue(parentData.jsonData, name, data);
-        }else{
-            JsonValue old = jsonData;
-            if(old.prev != null) old.prev.next = data;
-            if(old.next != null) old.next.prev = data;
-            jsonData = data;
-        }
-    }
-
-    public void removeJson(String name){
-        if(jsonData == null) return;
-        jsonData.remove(name);
-
-        // keep tree clean
-        if(jsonData.child == null && parentData != null){
-            parentData.removeJson(this.name);
-            jsonData = null;
-        }
+        if(parentData != null && parentData.jsonData == null) parentData.initJsonData();
     }
 
     public void clearJson(){
+        if(jsonData == null) return;
+
+        jsonData = null;
         clearDynamicChildren();
 
-        for(var child : children){
-            child.clearDynamicChildren();
-            if(child.jsonData != null){
-                child.clearJson();
-            }
+        for(NodeData child : children){
+            if(child.jsonData != null) child.clearJson();
         }
 
-        if(parentData != null){
-            parentData.removeJson(name);
+        if(parentData != null && !parentData.children.contains(c -> c.jsonData != null)){
+            parentData.clearJson();
+        }
+    }
+
+    public void setJsonData(JsonValue value){
+        if(value == null){
             jsonData = null;
+            return;
+        }
+
+        initJsonData();
+
+        if(value.isValue()){
+            jsonData.setName(value.name);
+            jsonData.set(value.asString());
+            return;
+        }
+
+        if(value.isValue()) return;
+        setJsonData(value.name, value.type());
+    }
+
+    public void setJsonData(String name, ValueType type){
+        if(jsonData != null){
+            jsonData.setName(name);
+            jsonData.setType(type);
         }
     }
 
     public boolean hasJsonChild(String name){
-        return jsonData != null && jsonData.has(name);
+        if(jsonData == null) return false;
+        NodeData child = getChild(name);
+        return child != null && child.jsonData != null;
     }
 
     public void clearDynamicChildren(){

@@ -109,7 +109,7 @@ public class NodeDisplay{
     }
 
     private static void displayInfo(TextureRegion region, String value){
-        displayInfo(new TextureRegionDrawable(region), value);
+        displayInfo(region == null ? Icon.none : new TextureRegionDrawable(region), value);
     }
 
     private static void displayInfo(Drawable icon, String value){

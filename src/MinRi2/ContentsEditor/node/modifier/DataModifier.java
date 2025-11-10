@@ -70,8 +70,8 @@ public abstract class DataModifier<T> implements ModifyConsumer<T>, Poolable{
 
     @Override
     public T getValue(){
-        JsonValue jsonValue = nodeData.jsonData;
-        if(jsonValue == null || (!jsonValue.isValue() && nodeData.jsonData.size == 0)){
+        JsonValue jsonValue = nodeData.getJsonData();
+        if(jsonValue == null || !jsonValue.isValue()){
             return getDefaultValue();
         }
 
@@ -84,7 +84,7 @@ public abstract class DataModifier<T> implements ModifyConsumer<T>, Poolable{
 
         boolean modified = isModified(value);
         if(modified){
-            nodeData.jsonData.set(PatchJsonIO.getKeyName(value));
+            nodeData.getJsonData().set(PatchJsonIO.getKeyName(value));
 
             if(onModified != null){
                 onModified.get(true);

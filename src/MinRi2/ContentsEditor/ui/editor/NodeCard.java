@@ -312,7 +312,7 @@ public class NodeCard extends Table{
         }
 
         sortedChildren.sort(Structs.comps(
-            Structs.comparingBool(n -> n.jsonData == null),
+            Structs.comparingBool(n -> n.getJsonData() == null),
             Structs.comparingInt(NodeModifier::getModifierIndex).reversed()
         ));
 

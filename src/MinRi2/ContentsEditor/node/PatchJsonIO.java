@@ -43,10 +43,10 @@ public class PatchJsonIO{
     }
 
     public static Object readData(NodeData data){
-        if(data.jsonData == null) return null;
+        if(data.getJsonData() == null) return null;
         Class<?> type = getType(data);
         if(type == null) return null;
-        return getParser().getJson().readValue(type, data.jsonData);
+        return getParser().getJson().readValue(type, data.getJsonData());
     }
 
     public static String getKeyName(Object object){
@@ -86,62 +86,71 @@ public class PatchJsonIO{
     }
 
     private static void parseJson(NodeData data, JsonValue value){
-        data.setJsonData(value);
-        if(value == null || value.isValue()) return;
+        if(value == null || value.isValue()){
+            data.setJsonData(value);
+            return;
+        }
 
         if(value.isArray()){
+            data.setJsonData(value);
             if(!data.isSign()) return;
 
             FieldData meta = data.meta;
             if(data.isSign(ModifierSign.PLUS) && meta.elementType != null){
-                // copied
-                Seq<JsonValue> children = new Seq<>();
-                for(JsonValue jsonValue : value){
-                    children.add(jsonValue);
-                }
-                for(JsonValue elemValue : children){
+                for(JsonValue elemValue : value){
                     NodeData childData = NodeModifier.addCustomChild(data);
                     if(childData == null) return; // getaway
-                    childData.setJsonData(elemValue);
+                    parseJson(data, elemValue);
                 }
             }
             return;
         }
 
-        // extract dot syntax
-        JsonIterator iterator = value.iterator();
-        while(iterator.hasNext()){
-            JsonValue childValue = iterator.next();
-            if(childValue.name == null || childValue.isValue()) continue;
-
-            String[] children = childValue.name.split("\\.");
-            if(children.length == 1) continue;
-            iterator.remove();
-
-            JsonValue current = value;
-            for(int i = 0; i < children.length - 1; i++){
-                JsonValue extractedValue = new JsonValue(ValueType.object);
-                addChildValue(current, children[i], extractedValue);
-                current = extractedValue;
-            }
-            addChildValue(current, children[children.length - 1], childValue);
-        }
-
-
+        outer:
         for(JsonValue childValue : value){
-            String childName = childValue.name;
-
             // impossible?
-            if(childName == null) continue;
+            if(childValue.name == null) continue;
 
-            NodeData childData = data.getChild(childName);
-            if(childData == null){
-                Log.warn("Couldn't resolve @.@", data.name, childName);
-                return;
+            NodeData current = data;
+            for(String name : childValue.name.split("\\.")){
+                NodeData childData = current.getChild(name);
+                if(childData == null){
+                    Log.warn("Couldn't resolve @.@", current.name, name);
+                    current.clearJson();
+                    continue outer;
+                }
+                current = childData;
             }
 
-            parseJson(childData, childValue);
+            childValue.setName(current.name);
+            parseJson(current, childValue);
         }
+    }
+
+    public static JsonValue toJson(NodeData data){
+        JsonValue jsonData = data.getJsonData();
+        if(jsonData == null) return new JsonValue(ValueType.object);
+        return toJson(data, new JsonValue(jsonData.type()));
+    }
+
+    private static JsonValue toJson(NodeData node, JsonValue json){
+        JsonValue data = node.getJsonData();
+        if(data == null) return json;
+        json.setName(data.name);
+
+        if(data.isValue()){
+            json.set(data.asString());
+            return json;
+        }
+
+        for(NodeData child : node.getChildren()){
+            JsonValue childData = child.getJsonData();
+            if(childData == null) continue;
+            JsonValue childJson = toJson(child, new JsonValue(childData.type()));
+            addChildValue(json, childJson.name, childJson);
+        }
+
+        return json;
     }
 
     public static JsonValue processPatch(JsonValue value){
@@ -158,13 +167,14 @@ public class PatchJsonIO{
         for(JsonValue child : value){
             processPatch(child);
         }
+
         return value;
     }
 
     public static JsonValue simplifyPatch(JsonValue value){
         int singleCount = 0;
         JsonValue singleEnd = value;
-        while(singleEnd.child != null && singleEnd.size == 1){
+        while(singleEnd.child != null && singleEnd.child.next == null && singleEnd.child.prev == null){
             singleEnd = singleEnd.child;
             singleCount++;
         }
@@ -212,5 +222,7 @@ public class PatchJsonIO{
                 current = current.next;
             }
         }
+
+        jsonValue.size++;
     }
 }
