@@ -6,6 +6,7 @@ import arc.*;
 import arc.graphics.*;
 import arc.scene.ui.layout.*;
 import arc.struct.*;
+import arc.util.*;
 import arc.util.serialization.*;
 import arc.util.serialization.Jval.*;
 import mindustry.*;
@@ -34,7 +35,7 @@ public class PatchManager extends BaseDialog{
         hidden(this::savePatch);
         resized(this::rebuildCont);
         shown(() -> {
-            editorPatches.set(state.patcher.patches.map(p -> new EditorPatch(p)));
+            editorPatches.set(state.patcher.patches.map(EditorPatch::new));
             if(!cont.hasChildren()) setup();
             rebuildCont();
         });
@@ -60,6 +61,7 @@ public class PatchManager extends BaseDialog{
         }catch(Exception e){
             Vars.ui.showException(e);
         }
+        editorPatches.set(state.patcher.patches.map(EditorPatch::new));
         rebuildPatchTable();
     }
 
@@ -79,12 +81,14 @@ public class PatchManager extends BaseDialog{
         table.row();
 
         table.table(Styles.grayPanel, buttonTable -> {
-            buttonTable.defaults().minWidth(130f).height(40f).margin(8f).growX();
+            buttonTable.defaults().minWidth(130f).height(40f).margin(8f).pad(8f).growX();
 
             buttonTable.button("@add-patch", Icon.add, Styles.cleart, () -> {
-                editorPatches.add(new EditorPatch("name: " + findPatchName(), "error"));
-                savePatch();
-            });
+                String name = findPatchName();
+                String initialPatch = Strings.format("{name:\"@\"}", name);
+                editorPatches.add(new EditorPatch(name, initialPatch));
+            savePatch();
+        });
 
             buttonTable.button("@import-patch", Icon.add, Styles.cleart, () -> {
                 String text = Core.app.getClipboardText();
@@ -108,7 +112,7 @@ public class PatchManager extends BaseDialog{
         int index = 0;
         for(EditorPatch patch : editorPatches){
             patchTable.table(Tex.whiteui, t -> {
-                t.add(patch.name.isEmpty() ? "<unnamed>" : patch.name).growX();
+                t.add(patch.name.isEmpty() ? "<unnamed>" : patch.name).labelAlign(Align.center).minWidth(32f).pad(4f).growX();
 
                 t.table(buttons -> {
                     buttons.defaults().size(32f).pad(4f);

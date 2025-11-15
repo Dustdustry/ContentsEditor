@@ -111,6 +111,11 @@ public class NodeCard extends Table{
         cardCont.defaults().padLeft(16f);
 
         if(editing){
+            if(childCard.nodeData.parentData == null){
+                Core.app.post(() -> editChildNode(null));
+                return;
+            }
+
             childCard.rebuildCont();
             cardCont.add(childCard).grow();
         }else{

@@ -61,8 +61,13 @@ public class PatchEditor extends BaseDialog{
     }
 
     public void edit(EditorPatch patch){
+        try{
+            PatchJsonIO.parseJson(rootData, patch.patch);
+        }catch(Exception e){
+            Vars.ui.showException(e);
+            return;
+        }
         editPatch = patch;
-        PatchJsonIO.parseJson(rootData, patch.patch);
         show();
     }
 

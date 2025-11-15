@@ -166,6 +166,9 @@ public class NodeData{
 
     public void clearDynamicChildren(){
         if(isSign){
+            for(NodeData child : children){
+                child.parentData = null;
+            }
             children.clear();
         }
     }
