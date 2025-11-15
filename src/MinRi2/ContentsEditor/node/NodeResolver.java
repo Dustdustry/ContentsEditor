@@ -6,9 +6,11 @@ import arc.graphics.*;
 import arc.graphics.g2d.*;
 import arc.struct.*;
 import arc.util.*;
+import arc.util.serialization.Json.*;
 import mindustry.*;
 import mindustry.core.*;
 import mindustry.ctype.*;
+import mindustry.entities.part.*;
 import mindustry.mod.*;
 import mindustry.mod.ContentPatcher.*;
 
@@ -16,7 +18,8 @@ import java.lang.reflect.*;
 
 public class NodeResolver{
     private static final Seq<Class<?>> resolveBlacklist = Seq.with(
-    Prov.class, Class.class, Texture.class, TextureRegion.class, Fi.class, Boolf.class
+    Prov.class, Class.class, Texture.class, TextureRegion.class, Fi.class, Boolf.class,
+    DrawPart.class
     );
 
     public static void resolveNode(NodeData node, Object object){
@@ -121,10 +124,11 @@ public class NodeResolver{
         }else{
             for(var entry : PatchJsonIO.getFields(clazz)){
                 String name = entry.key;
-                Field field = entry.value.field;
-                if(!fieldEditable(field)) continue;
+                FieldMetadata childMeta = entry.value;
+                Field field = childMeta.field;
+                if(!fieldEditable(field) || typeBlack(childMeta.elementType)) continue;
                 Object childObj = object == null ? null : Reflect.get(object, field);
-                NodeData child = node.addChild(name, childObj, new FieldData(entry.value));
+                NodeData child = node.addChild(name, childObj, new FieldData(childMeta));
 
                 // not array or map
                 if(child.meta.elementType == null){
