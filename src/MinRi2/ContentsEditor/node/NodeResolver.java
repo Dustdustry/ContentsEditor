@@ -18,7 +18,7 @@ import java.lang.reflect.*;
 
 public class NodeResolver{
     private static final Seq<Class<?>> resolveBlacklist = Seq.with(
-    Prov.class, Class.class, Texture.class, TextureRegion.class, Fi.class, Boolf.class,
+    Prov.class, Class.class, Texture.class, TextureRegion.class, Fi.class, Boolf.class, Func.class,
     DrawPart.class
     );
 
@@ -26,7 +26,7 @@ public class NodeResolver{
         boolean unpatch = object instanceof Content && Vars.state.patcher.patches.any();
         if(unpatch) Vars.state.patcher.unapply();
 
-        resolveNode(node, object, PatchJsonIO.getType(node));
+        resolveFrom(node, object, PatchJsonIO.getType(node));
 
         if(unpatch){
             Seq<PatchSet> patches = Vars.state.patcher.patches;
@@ -36,10 +36,6 @@ public class NodeResolver{
             }catch(Exception ignored){
             }
         }
-    }
-
-    public static void resolveNode(NodeData node, @Nullable Object object, Class<?> clazz){
-        resolveFrom(node, object, clazz);
     }
 
     private static void resolveFrom(NodeData node, @Nullable Object object, Class<?> clazz){
@@ -69,28 +65,31 @@ public class NodeResolver{
             if(meta != null && typeBlack(meta.elementType)) return;
 
             int i = 0;
+            FieldData childMeta = meta == null ? null : new FieldData(meta.elementType);
             for(Object o : arr){
                 String name = "" + i++;
-                node.addChild(name, o);
+                node.addChild(name, o).addChild(ModifierSign.MODIFY.sign, childMeta);
             }
             FieldData signMeta = meta == null ? null : new FieldData(null, meta.elementType, null);
             node.addChild(ModifierSign.PLUS.sign, null, signMeta);
         }else if(object instanceof Seq<?> seq){
             if(meta != null && typeBlack(meta.elementType)) return;
 
+            FieldData childMeta = meta == null ? null : new FieldData(meta.elementType);
             for(int i = 0; i < seq.size; i++){
                 Object o = seq.get(i);
-                node.addChild("" + i, o);
+                node.addChild("" + i, o).addChild(ModifierSign.MODIFY.sign, childMeta);
             }
 
             FieldData signMeta = meta == null ? null : new FieldData(null, meta.elementType, null);
-            node.addChild(ModifierSign.PLUS.sign, null, signMeta);
+            node.addChild(ModifierSign.PLUS.sign, signMeta);
         }else if(object instanceof ObjectSet<?> set){
             if(meta != null && typeBlack(meta.elementType)) return;
 
             int i = 0;
+            FieldData childMeta = meta == null ? null : new FieldData(meta.elementType);
             for(Object o : set){
-                node.addChild("" + i++, o);
+                node.addChild("" + i++, o).addChild(ModifierSign.MODIFY.sign, childMeta);
             }
 
             FieldData signMeta = meta == null ? null : new FieldData(null, meta.elementType, null);

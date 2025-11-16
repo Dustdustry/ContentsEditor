@@ -22,7 +22,7 @@ import mindustry.ui.*;
  * Create by 2024/2/16
  */
 public class NodeCard extends Table{
-    public static float buttonWidth = 320f;
+    public static float buttonWidth = 330f;
     public static float buttonHeight = buttonWidth / 3f;
 
     private final Table cardCont, nodesTable; // workingTable / childrenNodesTable
@@ -67,10 +67,7 @@ public class NodeCard extends Table{
         }
 
         editing = childNodeData != null;
-
         childCard.setNodeData(childNodeData);
-        childCard.rebuild();
-
         rebuild();
     }
 
@@ -90,17 +87,11 @@ public class NodeCard extends Table{
 
     public void rebuild(){
         clearChildren();
-
-        if(nodeData == null){
-            return;
-        }
+        if(nodeData == null) return;
 
         defaults().growX();
-
         buildTitle(this);
-
         row();
-
         rebuildCont();
         add(cardCont).grow();
     }
@@ -116,16 +107,14 @@ public class NodeCard extends Table{
                 return;
             }
 
-            childCard.rebuildCont();
+            childCard.rebuild();
             cardCont.add(childCard).grow();
         }else{
             cardCont.table(this::setupSearchTable).pad(8f).growX();
-
             cardCont.row();
-
             cardCont.add(nodesTable).fill();
 
-            // 下一帧再重构
+            // 下一帧分配长度后再重构
             Core.app.post(this::rebuildNodesTable);
         }
     }
@@ -217,26 +206,28 @@ public class NodeCard extends Table{
         });
     }
 
-    private void addChildButton(Table table, NodeData childData){
+    private void addChildButton(Table table, NodeData node){
         ImageButtonStyle style = EStyles.cardButtoni;
-        if(childData.isDynamic()){
+        if(node.isDynamic()){
             style = EStyles.addButtoni;
-        }else if(nodeData.hasJsonChild(childData.name)){
+        }else if(nodeData.hasJsonChild(node.name)){
             style = EStyles.cardModifiedButtoni;
         }
 
         table.button(b -> {
             b.table(infoTable -> {
                 infoTable.left();
-                NodeDisplay.display(infoTable, childData);
+                NodeDisplay.display(infoTable, node);
             }).pad(8f).grow();
+
+            b.table(btn -> setupEditButton(btn, node)).pad(6f).growY();
 
             b.image().width(4f).color(Color.darkGray).growY().right();
             b.row();
             Cell<?> horizontalLine = b.image().height(4f).color(Color.darkGray).growX();
             horizontalLine.colspan(b.getColumns());
         }, style, () -> {
-            editChildNode(childData);
+            editChildNode(node);
 
             rebuildCont();
         });

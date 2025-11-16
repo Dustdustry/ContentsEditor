@@ -132,12 +132,16 @@ public class NodeData{
         clearDynamicChildren();
 
         for(NodeData child : children){
-            child.clearDynamicChildren();
             if(child.jsonData != null) child.clearJson();
         }
 
         if(parentData != null && !parentData.children.contains(c -> c.jsonData != null)){
             parentData.clearJson();
+        }
+
+        if(isDynamic()){
+            parentData.getChildren().remove(this, true);
+            parentData = null;
         }
     }
 

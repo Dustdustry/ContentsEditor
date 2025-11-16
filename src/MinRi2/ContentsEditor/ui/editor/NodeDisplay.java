@@ -18,7 +18,7 @@ import mindustry.type.*;
  * Create by 2024/2/15
  */
 public class NodeDisplay{
-    public static final float labelWidth = 120f;
+    public static final float labelWidth = 100f;
     private static ObjectMap<ContentType, TextureRegion> contentSymbolMap;
 
     private static Table table;
