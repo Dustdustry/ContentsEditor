@@ -6,6 +6,7 @@ import arc.func.*;
 import arc.struct.*;
 import arc.util.*;
 import arc.util.pooling.*;
+import arc.util.serialization.*;
 import mindustry.*;
 import mindustry.ctype.*;
 import mindustry.entities.abilities.*;
@@ -70,13 +71,6 @@ public class NodeModifier{
         return node.getSign(ModifierSign.MODIFY) != null;
     }
 
-    public static boolean hasCustomChild(NodeData signNode){
-        if(!signNode.isSign()) return false;
-
-        NodeData node = signNode.parentData;
-        return PatchJsonIO.isArray(node) || PatchJsonIO.isMap(node);
-    }
-
     private static Class<?> handleType(Class<?> type){
         int typeModifiers = type.getModifiers();
         if(!Modifier.isAbstract(typeModifiers) && !Modifier.isInterface(typeModifiers)) return type;
@@ -91,14 +85,22 @@ public class NodeModifier{
         });
     }
 
+    private static void handleDynamicData(NodeData node){
+        Object object = node.getObject();
+        if(object instanceof MappableContent mc){
+            node.getJsonData().set(PatchJsonIO.getKeyName(mc));
+        }
+    }
+
     public static NodeData addDynamicChild(NodeData signNode){
         return addDynamicChild(signNode, null);
     }
 
-    public static NodeData addDynamicChild(NodeData signNode, @Nullable Class<?> type){
-        if(!hasCustomChild(signNode)) return null;
+    public static NodeData addDynamicChild(NodeData node, @Nullable Class<?> type){
+        if(!(PatchJsonIO.isArray(node) || PatchJsonIO.isMap(node))) return null;
 
-        Object object = signNode.parentData.getObject();
+        Object object = node.getObject();
+        if(node.isSign()) object = node.parentData.getObject();
 
         int nextIndex = -1;
         if(object instanceof Object[] arr){
@@ -109,15 +111,16 @@ public class NodeModifier{
             nextIndex = set.size;
         }
 
-        FieldData meta = signNode.meta;
+        FieldData meta = node.meta;
         Class<?> actualElemType = type != null ? type : meta.elementType;
         if(nextIndex != -1){
-            int index = nextIndex + signNode.getChildren().size;
+            int index = nextIndex + node.getChildren().size;
             Object example = getExample(actualElemType);
             if(example == null) return null;
-            NodeData childData = signNode.addChild("" + index, example, new FieldData(example.getClass()));
+            NodeData childData = node.addChild("" + index, example, new FieldData(example.getClass()));
             childData.initJsonData();
             childData.addChild(ModifierSign.MODIFY.sign, new FieldData(example.getClass()));
+            handleDynamicData(childData);
             return childData;
         }
 
@@ -132,9 +135,10 @@ public class NodeModifier{
 
             Object example = getExample(actualElemType);
             if(example == null) return null;
-            NodeData childData = signNode.addChild(name, example, new FieldData(example.getClass(), example.getClass(), meta.keyType));
+            NodeData childData = node.addChild(name, example, new FieldData(example.getClass(), example.getClass(), meta.keyType));
             childData.initJsonData();
             childData.addChild(ModifierSign.MODIFY.sign, new FieldData(example.getClass()));
+            handleDynamicData(childData);
             return childData;
         }
 
@@ -142,7 +146,10 @@ public class NodeModifier{
     }
 
     public static Object getExample(Class<?> type){
+        if(type.isArray()) return Reflect.newArray(type.getComponentType(), 0);
+
         type = handleType(type);
+        if(type == null) return null;
 
         Object example = exampleMap.get(type);
         if(example != null) return example;

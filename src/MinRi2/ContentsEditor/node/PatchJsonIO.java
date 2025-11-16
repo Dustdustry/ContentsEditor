@@ -32,22 +32,6 @@ public class PatchJsonIO{
         ItemStack.class, LiquidStack.class, PayloadStack.class
     );
 
-    public static boolean isArray(NodeData data){
-        return isArray(getType(data));
-    }
-
-    public static boolean isMap(NodeData data){
-        return isMap(getType(data));
-    }
-
-    public static boolean isArray(Class<?> type){
-        return type != null && (type.isArray() || Seq.class.isAssignableFrom(type) || ObjectSet.class.isAssignableFrom(type));
-    }
-
-    public static boolean isMap(Class<?> type){
-        return type != null && ObjectMap.class.isAssignableFrom(type);
-    }
-
     public static Object readData(NodeData data){
         if(data.getJsonData() == null) return null;
         Class<?> type = getType(data);
@@ -77,11 +61,18 @@ public class PatchJsonIO{
     }
 
     public static Class<?> getType(NodeData node){
-        if(node.meta != null) return node.meta.type;
-        if(node.getObject() == null) return null;
-        Class<?> clazz = node.getObject().getClass();
-        while(clazz.isAnonymousClass()) clazz = clazz.getSuperclass();
-        return clazz;
+        if(node.getObject() == null){
+            return node.meta != null ? node.meta.type : null;
+        }
+        return ClassHelper.unoymousClass(node.getObject().getClass());
+    }
+
+    public static boolean isArray(NodeData data){
+        return ClassHelper.isArray(getType(data));
+    }
+
+    public static boolean isMap(NodeData data){
+        return ClassHelper.isMap(getType(data));
     }
 
     public static void parseJson(NodeData data, String patch){
@@ -99,18 +90,15 @@ public class PatchJsonIO{
         }
 
         if(value.isArray()){
-            data.setJsonData(value);
-            if(!data.isSign()) return;
+            if(!isArray(data)) return;
 
-            FieldData meta = data.meta;
-            if(data.isSign(ModifierSign.PLUS) && meta.elementType != null){
-                for(JsonValue elemValue : value){
-                    JsonValue typeValue = elemValue.remove("type");
-                    Class<?> type = typeValue != null && typeValue.isString() ? ClassMap.classes.get(typeValue.asString()) : null;
-                    NodeData childData = NodeModifier.addDynamicChild(data, type);
-                    if(childData == null) return; // getaway
-                    parseJson(childData, elemValue);
-                }
+            data.setJsonData(value);
+            for(JsonValue elemValue : value){
+                JsonValue typeValue = elemValue.remove("type");
+                Class<?> type = typeValue != null && typeValue.isString() ? ClassMap.classes.get(typeValue.asString()) : null;
+                NodeData childData = NodeModifier.addDynamicChild(data, type);
+                if(childData == null) return; // getaway
+                parseJson(childData, elemValue);
             }
             return;
         }
@@ -182,7 +170,7 @@ public class PatchJsonIO{
     }
 
     private static void processData(NodeData node, JsonValue value){
-        if(node.parentData != null && node.parentData.isSign(ModifierSign.PLUS)){
+        if(value.type() == ValueType.object && node.parentData != null && node.parentData.isSign(ModifierSign.PLUS)){
             Class<?> type = getType(node);
             if(type == null || partialTypeClass.contains(type)) return;
             String typeName = ClassMap.classes.findKey(type, true);

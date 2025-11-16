@@ -38,6 +38,9 @@ public class NodeResolver{
         }
     }
 
+    /**
+     * Sign Node's type is array or map.
+     */
     private static void resolveFrom(NodeData node, @Nullable Object object, Class<?> clazz){
         if(node.isRoot()){
             node.addChild("name", "root", new FieldData(String.class, null, null))
@@ -61,44 +64,40 @@ public class NodeResolver{
         if(clazz == null || clazz.isPrimitive() || clazz.isInterface() || Reflect.isWrapper(clazz)) return;
 
         FieldData meta = node.meta;
-        if(object instanceof Object[] arr){
-            if(meta != null && typeBlack(meta.elementType)) return;
+        if(meta != null && typeBlack(meta.elementType)) return;
 
+        if(object instanceof Object[] arr){
             int i = 0;
             FieldData childMeta = meta == null ? null : new FieldData(meta.elementType);
             for(Object o : arr){
                 String name = "" + i++;
                 node.addChild(name, o).addChild(ModifierSign.MODIFY.sign, childMeta);
             }
-            FieldData signMeta = meta == null ? null : new FieldData(null, meta.elementType, null);
+            FieldData signMeta = meta == null ? null : new FieldData(meta.type, meta.elementType, null);
             node.addChild(ModifierSign.PLUS.sign, null, signMeta);
         }else if(object instanceof Seq<?> seq){
-            if(meta != null && typeBlack(meta.elementType)) return;
-
             FieldData childMeta = meta == null ? null : new FieldData(meta.elementType);
             for(int i = 0; i < seq.size; i++){
                 Object o = seq.get(i);
                 node.addChild("" + i, o).addChild(ModifierSign.MODIFY.sign, childMeta);
             }
 
-            FieldData signMeta = meta == null ? null : new FieldData(null, meta.elementType, null);
+            FieldData signMeta = meta == null ? null : new FieldData(meta.type, meta.elementType, null);
             node.addChild(ModifierSign.PLUS.sign, signMeta);
         }else if(object instanceof ObjectSet<?> set){
-            if(meta != null && typeBlack(meta.elementType)) return;
-
             int i = 0;
             FieldData childMeta = meta == null ? null : new FieldData(meta.elementType);
             for(Object o : set){
                 node.addChild("" + i++, o).addChild(ModifierSign.MODIFY.sign, childMeta);
             }
 
-            FieldData signMeta = meta == null ? null : new FieldData(null, meta.elementType, null);
+            FieldData signMeta = meta == null ? null : new FieldData(meta.type, meta.elementType, null);
             node.addChild(ModifierSign.PLUS.sign, null, signMeta);
         }else if(object instanceof ObjectMap<?, ?> map){
             if(meta != null && typeBlack(meta.elementType)) return;
 
             FieldData childMeta = meta == null ? null : new FieldData(meta.elementType, meta.elementType, meta.keyType);
-            FieldData signMeta = meta == null ? null : new FieldData(null, meta.elementType, meta.keyType);
+            FieldData signMeta = meta == null ? null : new FieldData(meta.type, meta.elementType, meta.keyType);
             for(var entry : map){
                 String name = PatchJsonIO.getKeyName(entry.key);
                 NodeData child = node.addChild(name, new MapEntry<>(entry), childMeta);

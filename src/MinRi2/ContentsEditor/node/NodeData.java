@@ -115,16 +115,11 @@ public class NodeData{
     public void initJsonData(){
         if(jsonData != null) return;
 
-        ValueType type = name.equals(ModifierSign.PLUS.sign) && PatchJsonIO.isArray(parentData) ? ValueType.array : ValueType.object;
+        ValueType type = !hasSign(ModifierSign.PLUS) && PatchJsonIO.isArray(this) ? ValueType.array : ValueType.object;
         jsonData = new JsonValue(type);
         if(!isRoot()) jsonData.setName(name);
 
         if(parentData != null && parentData.jsonData == null) parentData.initJsonData();
-    }
-
-    public void clearChildren(){
-        children.clear();
-        resolved = false;
     }
 
     public void clearJson(){
@@ -165,7 +160,6 @@ public class NodeData{
             return;
         }
 
-        if(value.isValue()) return;
         setJsonData(value.name, value.type());
     }
 

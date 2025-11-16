@@ -177,7 +177,7 @@ public class NodeCard extends Table{
 
 
         NodeData plusData = nodeData.getSign(ModifierSign.PLUS);
-        if(plusData != null) addPlusButton(nodesTable, plusData);
+        if(plusData != null && nodeData.meta != null) addPlusButton(nodesTable, plusData);
     }
 
     private void addEditTable(Table table, NodeData node, DataModifier<?> modifier){

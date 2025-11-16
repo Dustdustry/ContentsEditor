@@ -12,7 +12,7 @@ public class FieldData{
     }
 
     public FieldData(Class<?> type, Class<?> elementType, Class<?> keyType){
-        this.type = type;
+        this.type = ClassHelper.unoymousClass(type);
         this.elementType = elementType;
         this.keyType = keyType;
 
