@@ -127,6 +127,10 @@ public class NodeData{
 
         jsonData = null;
 
+        if(parentData != null && !parentData.isDynamic() && !parentData.children.contains(c -> c.jsonData != null)){
+            parentData.clearJson();
+        }
+
         if(isDynamic()){
             parentData.getChildren().remove(this, true);
             parentData = null;
@@ -139,10 +143,6 @@ public class NodeData{
             for(NodeData child : children){
                 if(child.jsonData != null) child.clearJson();
             }
-        }
-
-        if(parentData != null && !parentData.children.contains(c -> c.jsonData != null)){
-            parentData.clearJson();
         }
     }
 

@@ -28,7 +28,7 @@ public class NodeCard extends Table{
     public boolean editing;
     public NodeCard parent, childCard;
     private NodeData nodeData;
-    private Seq<NodeData> sortedChildren;
+    private OrderedMap<Class<?>, Seq<NodeData>> mappedChildren;
 
     private NodeData lastChildData;
 
@@ -113,7 +113,7 @@ public class NodeCard extends Table{
             cardCont.row();
             cardCont.add(nodesTable).fill();
 
-            // 下一帧分配长度后再重构
+            // After layout assigned size
             Core.app.post(this::rebuildNodesTable);
         }
     }
@@ -147,37 +147,60 @@ public class NodeCard extends Table{
 
         int columns = Math.max(1, (int)(nodesTable.getWidth() / Scl.scl() / buttonWidth));
 
-        nodesTable.defaults().size(buttonWidth, buttonWidth / 4).pad(4f).margin(8f).top().left();
+        var map = mappedChildren();
+        for(var entry : map){
+            Seq<NodeData> children = entry.value;
+            Class<?> declareClass = entry.key;
+            if(children.isEmpty() && declareClass != Object.class) continue;
 
-        int index = 0;
-        for(NodeData child : sortChildren()){
-            // sign have its table
-            if(child.isSign()) continue;
+            if(declareClass != Object.class){
+                nodesTable.table(t -> {
+                    t.image().color(Pal.darkerGray).size(32f, 6f);
+                    t.add(declareClass.getSimpleName()).color(EPalettes.type).padLeft(16f).padRight(16f).left();
+                    t.image().color(Pal.darkerGray).height(4f).growX();
+                }).marginTop(16f).marginBottom(8f).growX();
+                nodesTable.row();
+            }
+            Table cont = nodesTable.table().left().get();
+            nodesTable.row();
 
-            if(!searchText.isEmpty()){
-                String displayName = NodeDisplay.getDisplayName(child.getObject());
+            cont.defaults().size(buttonWidth, buttonWidth / 4).pad(4f).margin(8f).top().left();
 
-                if(!Strings.matches(searchText, child.name)
-                && (displayName == null || !Strings.matches(searchText, displayName))){
-                    continue;
+            int index = 0;
+            for(NodeData child : children){
+                // sign have its table
+                if(child.isSign()) continue;
+
+                if(!searchText.isEmpty()){
+                    String displayName = NodeDisplay.getDisplayName(child.getObject());
+
+                    if(!Strings.matches(searchText, child.name)
+                    && (displayName == null || !Strings.matches(searchText, displayName))){
+                        continue;
+                    }
+                }
+
+                DataModifier<?> modifier = NodeModifier.getModifier(child);
+                if(modifier != null){
+                    addEditTable(cont, child, modifier);
+                }else{
+                    addChildButton(cont, child);
+                }
+
+                if(++index % columns == 0){
+                    cont.row();
                 }
             }
 
-            DataModifier<?> modifier = NodeModifier.getModifier(child);
-            if(modifier != null){
-                addEditTable(nodesTable, child, modifier);
-            }else{
-                addChildButton(nodesTable, child);
+            if(declareClass == Object.class){
+                NodeData plusData = nodeData.getSign(ModifierSign.PLUS);
+                if(plusData != null) addPlusButton(cont, plusData);
             }
 
-            if(++index % columns == 0){
-                nodesTable.row();
-            }
+            children.clear();
         }
 
-
-        NodeData plusData = nodeData.getSign(ModifierSign.PLUS);
-        if(plusData != null && nodeData.meta != null) addPlusButton(nodesTable, plusData);
+        map.clear();
     }
 
     private void addEditTable(Table table, NodeData node, DataModifier<?> modifier){
@@ -233,10 +256,12 @@ public class NodeCard extends Table{
     }
 
     private void addPlusButton(Table table, NodeData plusData){
+        if(plusData.meta == null || plusData.meta.type == null) return;
+
         table.button(b -> {
             b.image(Icon.add).pad(8f).padRight(16f);
 
-            b.add(nodeData.meta.elementType.getSimpleName()).color(EPalettes.type)
+            b.add(plusData.meta.type.getSimpleName()).color(EPalettes.type)
             .style(Styles.outlineLabel).ellipsis(true).fillX();
 
             b.image().width(4f).color(Color.darkGray).growY().right();
@@ -300,26 +325,44 @@ public class NodeCard extends Table{
         }).color(titleColor);
     }
 
-    private Seq<NodeData> sortChildren(){
-        if(sortedChildren == null){
-            sortedChildren = new Seq<>();
+    private OrderedMap<Class<?>, Seq<NodeData>> mappedChildren(){
+        if(mappedChildren == null) mappedChildren = new OrderedMap<>();
+        for(var entry : mappedChildren){
+            entry.value.clear();
+        }
+        mappedChildren.clear();
+
+        Class<?> type = PatchJsonIO.getType(nodeData);
+        if(type == null) return mappedChildren;
+
+        while(type != null){
+            mappedChildren.put(type, new Seq<>());
+            type = type.getSuperclass();
         }
 
-        sortedChildren.clear();
-        sortedChildren.set(nodeData.getChildren());
-
-        for(NodeData child : sortedChildren){
+        for(NodeData child : nodeData.getChildren()){
             if(child.isSign()){
-                sortedChildren.addAll(child.getChildren());
+                mappedChildren.get(Object.class).addAll(child.getChildren());
+                continue;
             }
+
+            if(child.meta == null || child.meta.field == null){
+                mappedChildren.get(Object.class).add(child); // Object means unknow declaring class
+                continue;
+            }
+
+            mappedChildren.get(child.meta.field.getDeclaringClass()).add(child);
         }
 
-        sortedChildren.sort(Structs.comps(
-            Structs.comparingBool(n -> n.getJsonData() == null),
-            Structs.comparingInt(NodeModifier::getModifierIndex).reversed()
-        ));
+        for(var entry : mappedChildren){
+            var children = entry.value;
+            if(children.any()) children.sort(Structs.comps(
+                Structs.comparingBool(n -> n.getJsonData() == null),
+                Structs.comparingInt(NodeModifier::getModifierIndex).reversed()
+            ));
+        }
 
-        return sortedChildren;
+        return mappedChildren;
     }
 
     @Override

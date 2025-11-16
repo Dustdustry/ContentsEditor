@@ -3,8 +3,11 @@ package MinRi2.ContentsEditor.node;
 import arc.util.*;
 import arc.util.serialization.Json.*;
 
+import java.lang.reflect.*;
+
 // Thanks to anuke's private class
 public class FieldData{
+    public @Nullable Field field;
     public @Nullable Class<?> type, elementType, keyType;
 
     public FieldData(Class<?> type){
@@ -24,5 +27,7 @@ public class FieldData{
 
     public FieldData(FieldMetadata metadata){
         this(metadata.field.getType(), metadata.elementType, metadata.keyType);
+
+        this.field = metadata.field;
     }
 }
