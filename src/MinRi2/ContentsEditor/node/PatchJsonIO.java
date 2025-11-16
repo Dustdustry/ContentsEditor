@@ -98,7 +98,9 @@ public class PatchJsonIO{
             FieldData meta = data.meta;
             if(data.isSign(ModifierSign.PLUS) && meta.elementType != null){
                 for(JsonValue elemValue : value){
-                    NodeData childData = NodeModifier.addCustomChild(data);
+                    JsonValue typeValue = elemValue.remove("type");
+                    String typeName = typeValue != null && typeValue.isString() ? typeValue.asString() : null;
+                    NodeData childData = NodeModifier.addCustomChild(data, typeName);
                     if(childData == null) return; // getaway
                     parseJson(childData, elemValue);
                 }
@@ -143,6 +145,8 @@ public class PatchJsonIO{
             return json;
         }
 
+        processData(node, json);
+
         for(NodeData child : node.getChildren()){
             JsonValue childData = child.getJsonData();
             if(childData == null) continue;
@@ -151,6 +155,16 @@ public class PatchJsonIO{
         }
 
         return json;
+    }
+
+    private static void processData(NodeData node, JsonValue value){
+        if(node.parentData != null && node.parentData.isSign(ModifierSign.PLUS)){
+            Class<?> type = getType(node);
+            if(type == null) return;
+            String typeName = ClassMap.classes.findKey(type, true);
+            if(typeName == null) typeName = type.getCanonicalName();
+            addChildValue(value, "type", new JsonValue(typeName));
+        }
     }
 
     public static JsonValue processPatch(JsonValue value){
@@ -174,7 +188,7 @@ public class PatchJsonIO{
     public static JsonValue simplifyPatch(JsonValue value){
         int singleCount = 0;
         JsonValue singleEnd = value;
-        while(singleEnd.child != null && singleEnd.child.isObject() && singleEnd.child.next == null && singleEnd.child.prev == null){
+        while(singleEnd.isObject() && singleEnd.child != null && singleEnd.child.next == null && singleEnd.child.prev == null){
             singleEnd = singleEnd.child;
             singleCount++;
         }
