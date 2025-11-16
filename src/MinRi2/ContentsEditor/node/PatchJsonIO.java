@@ -7,7 +7,6 @@ import arc.util.serialization.*;
 import arc.util.serialization.Json.*;
 import arc.util.serialization.JsonValue.*;
 import arc.util.serialization.Jval.*;
-import mindustry.content.*;
 import mindustry.ctype.*;
 import mindustry.mod.*;
 import mindustry.type.*;
@@ -107,8 +106,8 @@ public class PatchJsonIO{
             if(data.isSign(ModifierSign.PLUS) && meta.elementType != null){
                 for(JsonValue elemValue : value){
                     JsonValue typeValue = elemValue.remove("type");
-                    String typeName = typeValue != null && typeValue.isString() ? typeValue.asString() : null;
-                    NodeData childData = NodeModifier.addCustomChild(data, typeName);
+                    Class<?> type = typeValue != null && typeValue.isString() ? ClassMap.classes.get(typeValue.asString()) : null;
+                    NodeData childData = NodeModifier.addDynamicChild(data, type);
                     if(childData == null) return; // getaway
                     parseJson(childData, elemValue);
                 }

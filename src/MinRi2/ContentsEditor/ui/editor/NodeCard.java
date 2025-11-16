@@ -14,7 +14,6 @@ import arc.util.*;
 import mindustry.*;
 import mindustry.gen.*;
 import mindustry.graphics.*;
-import mindustry.mod.*;
 import mindustry.ui.*;
 
 /**
@@ -245,7 +244,7 @@ public class NodeCard extends Table{
             Cell<?> horizontalLine = b.image().height(4f).color(Color.darkGray).growX();
             horizontalLine.colspan(b.getColumns());
         }, EStyles.addButtoni, () -> {
-            NodeModifier.addCustomChild(plusData);
+            NodeModifier.addDynamicChild(plusData);
             rebuildNodesTable();
         });
     }

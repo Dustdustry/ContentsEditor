@@ -91,11 +91,11 @@ public class NodeModifier{
         });
     }
 
-    public static NodeData addCustomChild(NodeData signNode){
-        return addCustomChild(signNode, null);
+    public static NodeData addDynamicChild(NodeData signNode){
+        return addDynamicChild(signNode, null);
     }
 
-    public static NodeData addCustomChild(NodeData signNode, @Nullable String typeName){
+    public static NodeData addDynamicChild(NodeData signNode, @Nullable Class<?> type){
         if(!hasCustomChild(signNode)) return null;
 
         Object object = signNode.parentData.getObject();
@@ -110,7 +110,7 @@ public class NodeModifier{
         }
 
         FieldData meta = signNode.meta;
-        Class<?> actualElemType = typeName != null ? ClassMap.classes.get(typeName, meta.elementType) : meta.elementType;
+        Class<?> actualElemType = type != null ? type : meta.elementType;
         if(nextIndex != -1){
             int index = nextIndex + signNode.getChildren().size;
             Object example = getExample(actualElemType);

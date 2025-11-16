@@ -31,6 +31,7 @@ public class NodeData{
     private final boolean isSign;
 
     private boolean resolved;
+
     private NodeData(String name, Object object){
         this(name, object, null);
     }
@@ -103,10 +104,6 @@ public class NodeData{
         return jsonData;
     }
 
-    public boolean hasSign(){
-        return Structs.contains(ModifierSign.all, this::hasSign);
-    }
-
     public boolean hasSign(ModifierSign sign){
         return getSign(sign) != null;
     }
@@ -125,23 +122,32 @@ public class NodeData{
         if(parentData != null && parentData.jsonData == null) parentData.initJsonData();
     }
 
+    public void clearChildren(){
+        children.clear();
+        resolved = false;
+    }
+
     public void clearJson(){
         if(jsonData == null) return;
 
         jsonData = null;
-        clearDynamicChildren();
-
-        for(NodeData child : children){
-            if(child.jsonData != null) child.clearJson();
-        }
-
-        if(parentData != null && !parentData.children.contains(c -> c.jsonData != null)){
-            parentData.clearJson();
-        }
 
         if(isDynamic()){
             parentData.getChildren().remove(this, true);
             parentData = null;
+        }else if(isSign){
+            for(NodeData child : children){
+                child.parentData = null;
+            }
+            children.clear();
+        }else{
+            for(NodeData child : children){
+                if(child.jsonData != null) child.clearJson();
+            }
+        }
+
+        if(parentData != null && !parentData.children.contains(c -> c.jsonData != null)){
+            parentData.clearJson();
         }
     }
 
@@ -174,15 +180,6 @@ public class NodeData{
         if(jsonData == null) return false;
         NodeData child = getChild(name);
         return child != null && child.jsonData != null;
-    }
-
-    public void clearDynamicChildren(){
-        if(isSign){
-            for(NodeData child : children){
-                child.parentData = null;
-            }
-            children.clear();
-        }
     }
 
     @Override
