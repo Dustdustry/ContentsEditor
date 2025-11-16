@@ -14,20 +14,23 @@ import mindustry.type.*;
 import mindustry.world.*;
 import mindustry.world.consumers.*;
 
-import static mindustry.Vars.content;
-
 public class PatchJsonIO{
     public static final int simplifySingleCount = 3;
 
     private static ContentParser parser;
     private static ObjectMap<String, ContentType> nameToType;
 
-    public static ObjectMap<Class<?>, ContentType> contentClassTypeMap = ObjectMap.of(
+    public static final ObjectMap<Class<?>, ContentType> contentClassTypeMap = ObjectMap.of(
         Block.class, ContentType.block,
         Item.class, ContentType.item,
         Liquid.class, ContentType.liquid,
         StatusEffect.class, ContentType.status,
         UnitType.class, ContentType.unit
+    );
+
+    /** Classes that type is partial when node is dynamic. */
+    public static final Seq<Class<?>> partialTypeClass = Seq.with(
+        ItemStack.class, LiquidStack.class, PayloadStack.class
     );
 
     public static boolean isArray(NodeData data){
@@ -182,7 +185,7 @@ public class PatchJsonIO{
     private static void processData(NodeData node, JsonValue value){
         if(node.parentData != null && node.parentData.isSign(ModifierSign.PLUS)){
             Class<?> type = getType(node);
-            if(type == null) return;
+            if(type == null || partialTypeClass.contains(type)) return;
             String typeName = ClassMap.classes.findKey(type, true);
             if(typeName == null) typeName = type.getCanonicalName();
             addChildValue(value, "type", new JsonValue(typeName));
@@ -195,7 +198,7 @@ public class PatchJsonIO{
             fieldData.remove(value.name);
 
             JsonValue parent = fieldData.parent;
-            if(fieldData.size < 0) parent.remove(fieldData.name);
+            if(fieldData.child == null) parent.remove(fieldData.name);
 
             addChildValue(parent, fieldData.name + "." + value.name, value);
         }
@@ -208,7 +211,7 @@ public class PatchJsonIO{
     }
 
     public static JsonValue simplifyPatch(JsonValue value){
-        int singleCount = 0;
+        int singleCount = 1;
         JsonValue singleEnd = value;
         while(singleEnd.isObject() && singleEnd.child != null && singleEnd.child.next == null && singleEnd.child.prev == null){
             singleEnd = singleEnd.child;
