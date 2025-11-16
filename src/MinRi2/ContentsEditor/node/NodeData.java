@@ -79,6 +79,10 @@ public class NodeData{
         return addChild(name, object, null);
     }
 
+    public NodeData addChild(String name, FieldData meta){
+        return addChild(name, null, meta);
+    }
+
     public NodeData addChild(String name, Object object, FieldData meta){
         NodeData child = new NodeData(name, object, meta);
         children.add(child);

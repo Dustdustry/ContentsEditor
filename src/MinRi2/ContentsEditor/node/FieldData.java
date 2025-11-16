@@ -7,6 +7,10 @@ import arc.util.serialization.Json.*;
 public class FieldData{
     public @Nullable Class<?> type, elementType, keyType;
 
+    public FieldData(Class<?> type){
+        this(type, null, null);
+    }
+
     public FieldData(Class<?> type, Class<?> elementType, Class<?> keyType){
         this.type = type;
         this.elementType = elementType;

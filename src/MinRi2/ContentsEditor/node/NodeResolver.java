@@ -93,8 +93,8 @@ public class NodeResolver{
                 node.addChild("" + i++, o);
             }
 
-            FieldData signMeta = meta == null ? null : new FieldData(null, meta.elementType, meta.keyType);
-            node.addChild(ModifierSign.PLUS.sign, signMeta);
+            FieldData signMeta = meta == null ? null : new FieldData(null, meta.elementType, null);
+            node.addChild(ModifierSign.PLUS.sign, null, signMeta);
         }else if(object instanceof ObjectMap<?, ?> map){
             if(meta != null && typeBlack(meta.elementType)) return;
 
@@ -104,12 +104,12 @@ public class NodeResolver{
                 String name = PatchJsonIO.getKeyName(entry.key);
                 NodeData child = node.addChild(name, new MapEntry<>(entry), childMeta);
                 if(signMeta != null){
-                    child.addChild(ModifierSign.REMOVE.sign, null, signMeta);
+                    child.addChild(ModifierSign.REMOVE.sign, signMeta);
                 }
             }
             // unaccessible
             if(!(node.getObject() instanceof Content)){
-                node.addChild(ModifierSign.PLUS.sign, null, childMeta);
+                node.addChild(ModifierSign.PLUS.sign, childMeta);
             }
         }else if(object instanceof ContentType ctype){
             OrderedMap<String, Content> map = new OrderedMap<>(); // in order
@@ -132,7 +132,7 @@ public class NodeResolver{
 
                 // not array or map
                 if(child.meta.elementType == null){
-                    child.addChild(ModifierSign.MODIFY.sign, null, child.meta);
+                    child.addChild(ModifierSign.MODIFY.sign, child.meta);
                 }
             }
         }
