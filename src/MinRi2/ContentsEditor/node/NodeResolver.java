@@ -23,19 +23,7 @@ public class NodeResolver{
     );
 
     public static void resolveNode(NodeData node, Object object){
-        boolean unpatch = Vars.state.patcher.patches.any();
-        if(unpatch) Vars.state.patcher.unapply();
-
-        resolveFrom(node, object, PatchJsonIO.getType(node));
-
-        if(unpatch){
-            Seq<PatchSet> patches = Vars.state.patcher.patches;
-
-            try{
-                Vars.state.patcher.apply(patches.map(p -> p.patch));
-            }catch(Exception ignored){
-            }
-        }
+        resolveFrom(node, object, PatchJsonIO.getTypeOut(node));
     }
 
     /**
@@ -55,7 +43,7 @@ public class NodeResolver{
             return;
         }
 
-        if(node.isSign()) return;
+        if(node.isSign() && !node.isSign(ModifierSign.MODIFY)) return;
         if(object instanceof MapEntry<?,?> entry){
             object = entry.value;
             clazz = object.getClass();
@@ -130,7 +118,7 @@ public class NodeResolver{
 
                 // not array or map
                 if(child.meta.elementType == null){
-                    child.addChild(ModifierSign.MODIFY.sign, child.meta);
+                    child.addChild(ModifierSign.MODIFY.sign, child.meta.cpy());
                 }
             }
         }

@@ -5,7 +5,7 @@ public enum ModifierSign{
     PLUS("+"),
     // used for ObjectMap as the value
     REMOVE("-"),
-    // mark as modifiable
+    // mark as modifiable and overrideable
     MODIFY("=");
 
     public final String sign;

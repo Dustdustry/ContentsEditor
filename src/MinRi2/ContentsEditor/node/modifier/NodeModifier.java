@@ -47,7 +47,7 @@ public class NodeModifier{
 
     public static DataModifier<?> getModifier(NodeData node){
         if(canModify(node)){
-            Class<?> type = PatchJsonIO.getType(node);
+            Class<?> type = PatchJsonIO.getTypeOut(node);
             for(ModifierConfig config : modifyConfig){
                 if(config.canModify(type)) return config.getModifier(node);
             }
@@ -58,7 +58,7 @@ public class NodeModifier{
     public static int getModifierIndex(NodeData node){
         if(canModify(node)){
             int i = 0;
-            Class<?> type = PatchJsonIO.getType(node);
+            Class<?> type = PatchJsonIO.getTypeOut(node);
             for(ModifierConfig config : modifyConfig){
                 if(config.canModify(type)) return i;
                 i++;
@@ -93,7 +93,7 @@ public class NodeModifier{
     }
 
     public static NodeData changeType(NodeData node, Class<?> newType){
-        Class<?> typeMeta = PatchJsonIO.getTypeMeta(node);
+        Class<?> typeMeta = PatchJsonIO.getTypeIn(node);
         if(typeMeta == null){
             throw new RuntimeException("Couldn't change " + node.name + "'s type due to the null type of meta.");
         }

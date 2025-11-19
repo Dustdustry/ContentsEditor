@@ -340,7 +340,7 @@ public class NodeCard extends Table{
         }
         mappedChildren.clear();
 
-        Class<?> type = PatchJsonIO.getType(data);
+        Class<?> type = PatchJsonIO.getTypeOut(data);
         if(type == null) return mappedChildren;
 
         while(type != null){

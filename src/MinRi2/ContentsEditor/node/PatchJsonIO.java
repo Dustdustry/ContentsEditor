@@ -19,14 +19,14 @@ public class PatchJsonIO{
     private static ContentParser parser;
     private static ObjectMap<String, ContentType> nameToType;
 
-    /** Classes that type is partial when node is dynamic. */
-    public static final Seq<Class<?>> partialTypeClass = Seq.with(
+    /** Classes that is partial when node is dynamic. */
+    public static final Seq<Class<?>> partialTypes = Seq.with(
         ItemStack.class, LiquidStack.class, PayloadStack.class
     );
 
     public static Object readData(NodeData data){
         if(data.getJsonData() == null) return null;
-        Class<?> type = getTypeMeta(data);
+        Class<?> type = getTypeIn(data);
         if(type == null) return null;
         return getParser().getJson().readValue(type, data.getJsonData());
     }
@@ -52,15 +52,16 @@ public class PatchJsonIO{
         return nameToType;
     }
 
-    public static Class<?> getTypeMeta(NodeData node){
-        return node.meta != null ? node.meta.type : null;
+    public static Class<?> getTypeIn(NodeData node){
+        if(node.meta != null) return node.meta.type;
+        return node.getObject() == null ? null : ClassHelper.unoymousClass(node.getObject().getClass());
     }
 
     /**
      * @return object's class first then meta type.
      */
-    public static Class<?> getType(NodeData node){
-        if(node.getObject() == null) return getTypeMeta(node);
+    public static Class<?> getTypeOut(NodeData node){
+        if(node.getObject() == null) return node.meta != null ? node.meta.type : null;
         return ClassHelper.unoymousClass(node.getObject().getClass());
     }
 
@@ -74,11 +75,11 @@ public class PatchJsonIO{
     }
 
     public static boolean isArray(NodeData data){
-        return ClassHelper.isArray(getType(data));
+        return ClassHelper.isArray(getTypeOut(data));
     }
 
     public static boolean isMap(NodeData data){
-        return ClassHelper.isMap(getType(data));
+        return ClassHelper.isMap(getTypeOut(data));
     }
 
     public static void parseJson(NodeData data, String patch){
@@ -131,7 +132,7 @@ public class PatchJsonIO{
     }
 
     private static void desugarJson(NodeData data, JsonValue value){
-        Class<?> type = getType(data);
+        Class<?> type = getTypeOut(data);
         if(type == ItemStack.class || type == PayloadStack.class){
             if(!value.isString() || !value.asString().contains("/")) return;
             String[] split = value.asString().split("/");
@@ -175,9 +176,9 @@ public class PatchJsonIO{
     }
 
     private static void processData(NodeData node, JsonValue value){
-        if(value.type() == ValueType.object && node.parentData != null && node.parentData.isSign(ModifierSign.PLUS)){
-            Class<?> type = getType(node);
-            if(type == null || partialTypeClass.contains(type)) return;
+        if(value.type() == ValueType.object && (node.isSign(ModifierSign.MODIFY) || node.isDynamic())){
+            Class<?> type = getTypeOut(node);
+            if(type == null || partialTypes.contains(type)) return;
             String typeName = ClassMap.classes.findKey(type, true);
             if(typeName == null) typeName = type.getName();
             addChildValue(value, "type", new JsonValue(typeName));

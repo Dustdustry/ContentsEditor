@@ -65,12 +65,12 @@ public abstract class DataModifier<T> implements ModifyConsumer<T>, Poolable{
 
     @Override
     public Class<?> getDataType(){
-        return PatchJsonIO.getType(nodeData);
+        return PatchJsonIO.getTypeOut(nodeData);
     }
 
     @Override
     public Class<?> getTypeMeta(){
-        return PatchJsonIO.getTypeMeta(nodeData);
+        return PatchJsonIO.getTypeIn(nodeData);
     }
 
     @Override

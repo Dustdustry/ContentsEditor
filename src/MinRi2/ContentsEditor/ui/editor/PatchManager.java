@@ -38,6 +38,11 @@ public class PatchManager extends BaseDialog{
             editorPatches.set(state.patcher.patches.map(EditorPatch::new));
             if(!cont.hasChildren()) setup();
             rebuildCont();
+
+            boolean unpatch = Vars.state.patcher.patches.any();
+            if(unpatch){
+                Vars.state.patcher.unapply();
+            }
         });
 
         editor.hidden(this::savePatch);
