@@ -34,7 +34,7 @@ public class PatchJsonIO{
 
     public static Object readData(NodeData data){
         if(data.getJsonData() == null) return null;
-        Class<?> type = getType(data);
+        Class<?> type = getTypeMeta(data);
         if(type == null) return null;
         return getParser().getJson().readValue(type, data.getJsonData());
     }
@@ -60,10 +60,15 @@ public class PatchJsonIO{
         return nameToType;
     }
 
+    public static Class<?> getTypeMeta(NodeData node){
+        return node.meta != null ? node.meta.type : null;
+    }
+
+    /**
+     * @return object's class first then meta type.
+     */
     public static Class<?> getType(NodeData node){
-        if(node.getObject() == null){
-            return node.meta != null ? node.meta.type : null;
-        }
+        if(node.getObject() == null) return getTypeMeta(node);
         return ClassHelper.unoymousClass(node.getObject().getClass());
     }
 
@@ -174,7 +179,7 @@ public class PatchJsonIO{
             Class<?> type = getType(node);
             if(type == null || partialTypeClass.contains(type)) return;
             String typeName = ClassMap.classes.findKey(type, true);
-            if(typeName == null) typeName = type.getCanonicalName();
+            if(typeName == null) typeName = type.getName();
             addChildValue(value, "type", new JsonValue(typeName));
         }
     }

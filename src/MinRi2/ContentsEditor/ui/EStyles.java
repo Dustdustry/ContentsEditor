@@ -5,6 +5,7 @@ import arc.scene.style.*;
 import arc.scene.ui.ImageButton.*;
 import arc.scene.ui.ScrollPane.*;
 import mindustry.gen.*;
+import mindustry.graphics.*;
 import mindustry.ui.*;
 
 import static mindustry.ui.Styles.cleari;
@@ -22,6 +23,7 @@ public class EStyles{
         cardButtoni = new ImageButtonStyle(cleari){{
             up = colored(EPalettes.gray);
             down = over = colored(EPalettes.main4);
+            disabled = colored(Pal.darkerGray);
         }};
 
         cardModifiedButtoni = new ImageButtonStyle(cardButtoni){{

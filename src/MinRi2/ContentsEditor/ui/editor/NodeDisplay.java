@@ -100,7 +100,7 @@ public class NodeDisplay{
             nodeInfoTable.defaults().width(labelWidth).left();
 
             Class<?> type = PatchJsonIO.getType(node);
-            String typeName = type == null ? "unknown" : type.getSimpleName();
+            String typeName = type == null ? "unknown" : ClassHelper.getDisplayName(type);
 
             nodeInfoTable.add(node.name).wrap().tooltip(node.name);
             nodeInfoTable.row();

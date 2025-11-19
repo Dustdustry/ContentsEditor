@@ -27,7 +27,7 @@ public class NodeCard extends Table{
     private final Table cardCont, nodesTable; // workingTable / childrenNodesTable
     public boolean editing;
     public NodeCard parent, childCard;
-    private NodeData nodeData;
+    private NodeData data;
     private OrderedMap<Class<?>, Seq<NodeData>> mappedChildren;
 
     private NodeData lastChildData;
@@ -43,8 +43,8 @@ public class NodeCard extends Table{
         nodesTable.top().left();
     }
 
-    public void setNodeData(NodeData nodeData){
-        this.nodeData = nodeData;
+    public void setData(NodeData data){
+        this.data = data;
     }
 
     public NodeCard getFrontCard(){
@@ -66,13 +66,13 @@ public class NodeCard extends Table{
         }
 
         editing = childNodeData != null;
-        childCard.setNodeData(childNodeData);
+        childCard.setData(childNodeData);
         rebuild();
     }
 
     public void extractWorking(){
         if(parent != null){
-            parent.lastChildData = nodeData;
+            parent.lastChildData = data;
             parent.editChildNode(null);
         }
     }
@@ -86,7 +86,7 @@ public class NodeCard extends Table{
 
     public void rebuild(){
         clearChildren();
-        if(nodeData == null) return;
+        if(data == null) return;
 
         defaults().growX();
         buildTitle(this);
@@ -101,7 +101,7 @@ public class NodeCard extends Table{
         cardCont.defaults().padLeft(16f);
 
         if(editing){
-            if(childCard.nodeData.parentData == null){
+            if(childCard.data.parentData == null){
                 Core.app.post(() -> editChildNode(null));
                 return;
             }
@@ -141,7 +141,7 @@ public class NodeCard extends Table{
         nodesTable.clearChildren();
 
         // 下一帧可能正好被清除
-        if(nodeData == null){
+        if(data == null){
             return;
         }
 
@@ -156,7 +156,7 @@ public class NodeCard extends Table{
             if(declareClass != Object.class){
                 nodesTable.table(t -> {
                     t.image().color(Pal.darkerGray).size(32f, 6f);
-                    t.add(declareClass.getSimpleName()).color(EPalettes.type).padLeft(16f).padRight(16f).left();
+                    t.add(ClassHelper.getDisplayName(declareClass)).color(EPalettes.type).padLeft(16f).padRight(16f).left();
                     t.image().color(Pal.darkerGray).height(4f).growX();
                 }).marginTop(16f).marginBottom(8f).growX();
                 nodesTable.row();
@@ -193,7 +193,7 @@ public class NodeCard extends Table{
             }
 
             if(declareClass == Object.class){
-                NodeData plusData = nodeData.getSign(ModifierSign.PLUS);
+                NodeData plusData = data.getSign(ModifierSign.PLUS);
                 if(plusData != null) addPlusButton(cont, plusData);
             }
 
@@ -232,7 +232,7 @@ public class NodeCard extends Table{
         ImageButtonStyle style = EStyles.cardButtoni;
         if(node.isDynamic()){
             style = EStyles.addButtoni;
-        }else if(nodeData.hasJsonChild(node.name)){
+        }else if(data.hasJsonChild(node.name)){
             style = EStyles.cardModifiedButtoni;
         }
 
@@ -252,16 +252,16 @@ public class NodeCard extends Table{
             editChildNode(node);
 
             rebuildCont();
-        });
+        }).disabled(node.getObject() == null);
     }
 
     private void addPlusButton(Table table, NodeData plusData){
-        if(plusData.meta == null || plusData.meta.type == null) return;
+        if(plusData.meta == null || plusData.meta.elementType == null) return;
 
         table.button(b -> {
             b.image(Icon.add).pad(8f).padRight(16f);
 
-            b.add(plusData.meta.type.getSimpleName()).color(EPalettes.type)
+            b.add(ClassHelper.getDisplayName(plusData.meta.elementType)).color(EPalettes.type)
             .style(Styles.outlineLabel).ellipsis(true).fillX();
 
             b.image().width(4f).color(Color.darkGray).growY().right();
@@ -289,7 +289,7 @@ public class NodeCard extends Table{
             nodeTitle.table(Tex.whiteui, nameTable -> {
                 nameTable.table(t -> {
                     t.left();
-                    NodeDisplay.display(t, nodeData);
+                    NodeDisplay.display(t, data);
                 }).pad(8f).grow();
 
                 nameTable.image().width(4f).color(Color.darkGray).growY().right();
@@ -300,8 +300,8 @@ public class NodeCard extends Table{
 
             // Clear data
             nodeTitle.button(Icon.refresh, Styles.cleari, () -> {
-                Vars.ui.showConfirm(Core.bundle.format("node-card.clear-data.confirm", nodeData.name), () -> {
-                    nodeData.clearJson();
+                Vars.ui.showConfirm(Core.bundle.format("node-card.clear-data.confirm", data.name), () -> {
+                    data.clearJson();
                     getFrontCard().rebuildNodesTable();
                 });
             }).size(64f).tooltip("@node-card.clear-data", true);
@@ -332,7 +332,7 @@ public class NodeCard extends Table{
         }
         mappedChildren.clear();
 
-        Class<?> type = PatchJsonIO.getType(nodeData);
+        Class<?> type = PatchJsonIO.getType(data);
         if(type == null) return mappedChildren;
 
         while(type != null){
@@ -340,7 +340,7 @@ public class NodeCard extends Table{
             type = type.getSuperclass();
         }
 
-        for(NodeData child : nodeData.getChildren()){
+        for(NodeData child : data.getChildren()){
             if(child.isSign()){
                 mappedChildren.get(Object.class).addAll(child.getChildren());
                 continue;
@@ -368,7 +368,7 @@ public class NodeCard extends Table{
     @Override
     public String toString(){
         return "NodeCard{" +
-        "nodeData=" + nodeData +
+        "nodeData=" + data +
         '}';
     }
 }

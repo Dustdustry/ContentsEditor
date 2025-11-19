@@ -11,6 +11,8 @@ public interface ModifyConsumer<T>{
      */
     Class<?> getDataType();
 
+    Class<?> getTypeMeta();
+
     void resetModify();
 
     /**

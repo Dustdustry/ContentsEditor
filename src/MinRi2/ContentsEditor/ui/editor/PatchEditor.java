@@ -7,10 +7,8 @@ import arc.*;
 import arc.input.*;
 import arc.util.serialization.*;
 import arc.util.serialization.JsonWriter.*;
-import arc.util.serialization.Jval.*;
 import mindustry.*;
 import mindustry.gen.*;
-import mindustry.mod.ContentPatcher.*;
 import mindustry.ui.*;
 import mindustry.ui.dialogs.*;
 
@@ -86,7 +84,7 @@ public class PatchEditor extends BaseDialog{
 
         cont.top();
 
-        card.setNodeData(rootData);
+        card.setData(rootData);
 
         addCloseListener();
     }

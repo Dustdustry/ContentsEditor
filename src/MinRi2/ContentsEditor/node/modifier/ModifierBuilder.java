@@ -91,10 +91,10 @@ public abstract class ModifierBuilder<T>{
             super.build(table);
 
             contentTable = table.button(b -> {}, Styles.clearNonei, () -> {
-                Class<?> dataType = consumer.getDataType();
-                ContentType contentType = PatchJsonIO.contentClassTypeMap.get(dataType);
+                Class<?> type = consumer.getTypeMeta();
+                ContentType contentType = PatchJsonIO.getContentType(type);
 
-                EUI.selector.select(contentType, consumer.getDataType(), c -> c != value, c -> {
+                EUI.selector.select(contentType, type, c -> c != value, c -> {
                     setValue(c);
                     consumer.onModify(value);
                     return true;
