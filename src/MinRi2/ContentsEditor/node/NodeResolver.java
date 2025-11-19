@@ -23,7 +23,7 @@ public class NodeResolver{
     );
 
     public static void resolveNode(NodeData node, Object object){
-        boolean unpatch = object instanceof Content && Vars.state.patcher.patches.any();
+        boolean unpatch = Vars.state.patcher.patches.any();
         if(unpatch) Vars.state.patcher.unapply();
 
         resolveFrom(node, object, PatchJsonIO.getType(node));
