@@ -206,7 +206,7 @@ public class PatchJsonIO{
     public static JsonValue simplifyPatch(JsonValue value){
         int singleCount = 1;
         JsonValue singleEnd = value;
-        while(singleEnd.isObject() && singleEnd.child != null && singleEnd.child.next == null && singleEnd.child.prev == null && !singleEnd.has("type")){
+        while(singleEnd.child != null && singleEnd.child.next == null && singleEnd.child.prev == null && !singleEnd.has("type")){
             singleEnd = singleEnd.child;
             singleCount++;
         }
@@ -224,7 +224,16 @@ public class PatchJsonIO{
             JsonValue parent = value.parent;
             removeValue(value);
             addChildValue(parent, name.toString(), singleEnd);
-            return singleEnd;
+            value = singleEnd;
+        }
+
+        if(value.isObject()){
+            // duck like
+            if(value.has("item") && value.has("amount")){
+                value.set(value.get("item").asString() + "/" + value.get("amount").asString());
+            }else if(value.has("liquid") && value.has("amount")){
+                value.set(value.get("liquid").asString() + "/" + value.get("amount").asString());
+            }
         }
 
         for(JsonValue child : value){
