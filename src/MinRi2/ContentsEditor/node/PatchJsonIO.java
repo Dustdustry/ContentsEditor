@@ -54,6 +54,7 @@ public class PatchJsonIO{
 
     public static Class<?> getTypeIn(NodeData node){
         if(node.meta != null) return node.meta.type;
+        if(node.getObject() instanceof MapEntry<?,?> entry) return ClassHelper.unoymousClass(entry.value.getClass());
         return node.getObject() == null ? null : ClassHelper.unoymousClass(node.getObject().getClass());
     }
 
@@ -62,6 +63,7 @@ public class PatchJsonIO{
      */
     public static Class<?> getTypeOut(NodeData node){
         if(node.getObject() == null) return node.meta != null ? node.meta.type : null;
+        if(node.getObject() instanceof MapEntry<?,?> entry) return ClassHelper.unoymousClass(entry.value.getClass());
         return ClassHelper.unoymousClass(node.getObject().getClass());
     }
 

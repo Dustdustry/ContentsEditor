@@ -99,7 +99,7 @@ public class NodeModifier{
         }
 
         if(!typeMeta.isAssignableFrom(newType)){
-            throw new RuntimeException("Couldn't change " + node.name + "'s type '" + typeMeta.getName() + "' due to unassignable type '" + newType.getName() + "'.");
+            throw new RuntimeException("Couldn't change the type of'" + node.name + "' to '" + typeMeta.getName() + "' due to unassignable type '" + newType.getName() + "'.");
         }
 
         Object example = getExample(typeMeta, newType);

@@ -84,13 +84,11 @@ public class NodeResolver{
             if(meta != null && typeBlack(meta.elementType)) return;
 
             FieldData childMeta = meta == null ? null : new FieldData(meta.elementType, meta.elementType, meta.keyType);
-            FieldData signMeta = meta == null ? null : new FieldData(meta.type, meta.elementType, meta.keyType);
             for(var entry : map){
                 String name = PatchJsonIO.getKeyName(entry.key);
                 NodeData child = node.addChild(name, new MapEntry<>(entry), childMeta);
-                if(signMeta != null){
-                    child.addChild(ModifierSign.REMOVE.sign, signMeta);
-                }
+                child.addChild(ModifierSign.REMOVE.sign, childMeta);
+                child.addChild(ModifierSign.MODIFY.sign, childMeta);
             }
             // unaccessible
             if(!(node.getObject() instanceof Content)){
