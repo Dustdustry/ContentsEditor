@@ -232,7 +232,7 @@ public class PatchJsonIO{
     public static JsonValue simplifyPatch(JsonValue value){
         int singleCount = 1;
         JsonValue singleEnd = value;
-        while(singleEnd.child != null && singleEnd.child.next == null && singleEnd.child.prev == null && !singleEnd.has("type")){
+        while(!singleEnd.isArray() && singleEnd.child != null && singleEnd.child.next == null && singleEnd.child.prev == null && !singleEnd.has("type")){
             singleEnd = singleEnd.child;
             singleCount++;
         }

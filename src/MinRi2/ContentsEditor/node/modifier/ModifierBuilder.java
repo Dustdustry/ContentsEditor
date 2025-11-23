@@ -9,9 +9,11 @@ import arc.scene.actions.*;
 import arc.scene.ui.*;
 import arc.scene.ui.layout.*;
 import arc.util.*;
+import mindustry.*;
 import mindustry.ctype.*;
 import mindustry.gen.*;
 import mindustry.ui.*;
+import mindustry.ui.dialogs.*;
 
 public abstract class ModifierBuilder<T>{
     protected T value;
@@ -22,8 +24,13 @@ public abstract class ModifierBuilder<T>{
         this.consumer = consumer;
     }
 
-    public void build(Table table){
-        value = consumer.getValue();
+    public abstract void build(Table table);
+
+    protected void addResetButton(Table table, Runnable clicked){
+        resetButton = table.button(Icon.undo, Styles.clearNonei, () -> {
+            consumer.resetModify();
+            clicked.run();
+        }).width(32f).pad(4f).growY().expandX().right().visible(consumer::isModified).tooltip("@node-modifier.undo", true).get();
     }
 
     public static class TextBuilder extends ModifierBuilder<String>{
@@ -34,17 +41,14 @@ public abstract class ModifierBuilder<T>{
 
         @Override
         public void build(Table table){
-            super.build(table);
+            value = consumer.getValue();
 
             TextField field = table.field(value, t -> {
                 consumer.onModify(t);
                 resetButton.visible = consumer.isModified();
             }).valid(consumer::checkValue).pad(4f).width(100f).get();
 
-            resetButton = addResetButton(table, consumer, () -> {
-                value = consumer.getValue();
-                field.setText(value);
-            });
+            addResetButton(table, () -> field.setText(value = consumer.getValue()));
         }
     };
 
@@ -56,12 +60,12 @@ public abstract class ModifierBuilder<T>{
 
         @Override
         public void build(Table table){
-            super.build(table);
+            value = consumer.getValue();
 
             BorderImage image = new BorderImage();
             image.addAction(Actions.color(value ? Color.green : Color.red, 0.3f));
 
-            Cons<Boolean> setColor = bool -> {
+            Cons<Boolean> setColorUI = bool -> {
                 value = bool;
                 image.addAction(Actions.color(bool ? Color.green : Color.red, 0.3f));
                 resetButton.visible = consumer.isModified();
@@ -71,11 +75,11 @@ public abstract class ModifierBuilder<T>{
                 b.add(image).size(32f).pad(8f).expandX().left();
                 b.label(() -> value ? "[green]true" : "[red]false").expandX();
             }, Styles.clearNonei, () -> {
-                setColor.get(!value);
+                setColorUI.get(!value);
                 consumer.onModify(value);
             }).grow();
 
-            resetButton = addResetButton(table, consumer, () -> setColor.get(consumer.getValue()));
+            addResetButton(table, () -> setColorUI.get(consumer.getValue()));
         }
     }
 
@@ -88,7 +92,7 @@ public abstract class ModifierBuilder<T>{
 
         @Override
         public void build(Table table){
-            super.build(table);
+            value = consumer.getValue();
 
             contentTable = table.button(b -> {}, Styles.clearNonei, () -> {
                 Class<?> type = consumer.getTypeMeta();
@@ -101,7 +105,7 @@ public abstract class ModifierBuilder<T>{
                 });
             }).grow().get();
 
-            resetButton = addResetButton(table, consumer, () -> setValue(consumer.getValue()));
+            addResetButton(table, () -> setValue(consumer.getValue()));
             setValue(consumer.getValue());
         }
 
@@ -128,10 +132,41 @@ public abstract class ModifierBuilder<T>{
         }
     }
 
-    private static Button addResetButton(Table table, ModifyConsumer<?> consumer, Runnable clicked){
-        return table.button(Icon.undo, Styles.clearNonei, () -> {
-            consumer.resetModify();
-            clicked.run();
-        }).width(32f).pad(4f).growY().expandX().right().visible(consumer::isModified).tooltip("@node-modifier.undo", true).get();
+    public static class ColorBuilder extends ModifierBuilder<String>{
+
+        public ColorBuilder(ModifyConsumer<String> consumer){
+            super(consumer);
+        }
+
+        @Override
+        public void build(Table table){
+            value = consumer.getValue();
+
+            Color color0 = Color.white.cpy();
+            try{
+                color0 = Color.valueOf(value);
+            }catch(RuntimeException ignored){
+            }
+
+            Color color = color0;
+            BorderImage image = new BorderImage();
+            Cons<Color> setColorUI = (c) -> {
+                color.set(c);
+                value = color.toString();
+                image.addAction(Actions.color(color, 0.3f));
+            };
+
+            image.addAction(Actions.color(color, 0.3f));
+            table.button(b -> {
+                b.add(image).grow();
+            }, Styles.clearNonei, () -> {
+                Vars.ui.picker.show(color, (c) -> {
+                    setColorUI.get(c);
+                    consumer.onModify(value);
+                });
+            }).size(40f).expandX();
+
+            addResetButton(table, () -> setColorUI.get(Color.valueOf(consumer.getValue())));
+        }
     }
 }

@@ -12,3 +12,8 @@ Enjoy making your own patch!
 - [x] Edit fields in Seq, ObjectSet, ObjectMap
 - [ ] Add new object in Seq, ObjectSet, ObjectMap   
 - [ ] Export easy-reading json
+
+
+## TODO
+
+- [ ] Weapons name list

@@ -1,5 +1,6 @@
 package MinRi2.ContentsEditor.node.modifier;
 
+import MinRi2.ContentsEditor.node.modifier.ModifierBuilder.*;
 import arc.util.serialization.JsonValue.*;
 import mindustry.ctype.*;
 
@@ -9,10 +10,6 @@ import mindustry.ctype.*;
  */
 public abstract class EqualModifier<T> extends DataModifier<T>{
 
-    /**
-     * @author minri2
-     * Create by 2024/4/4
-     */
     public static class ContentTypeModifier extends EqualModifier<UnlockableContent>{
         public ContentTypeModifier(){
             builder = new ModifierBuilder.ContentBuilder(this);
@@ -26,10 +23,6 @@ public abstract class EqualModifier<T> extends DataModifier<T>{
 
     }
 
-    /**
-     * @author minri2
-     * Create by 2024/4/4
-     */
     public static class BooleanModifier extends EqualModifier<Boolean>{
         public BooleanModifier(){
             builder = new ModifierBuilder.BooleanBuilder(this);
@@ -42,10 +35,6 @@ public abstract class EqualModifier<T> extends DataModifier<T>{
         }
     }
 
-    /**
-     * @author minri2
-     * Create by 2024/4/4
-     */
     public static class StringModifier extends EqualModifier<String>{
         public StringModifier(){
             builder = new ModifierBuilder.TextBuilder(this);
@@ -58,10 +47,6 @@ public abstract class EqualModifier<T> extends DataModifier<T>{
         }
     }
 
-    /**
-     * @author minri2
-     * Create by 2024/4/4
-     */
     public static class NumberModifier extends StringModifier{
 
         @Override
@@ -83,6 +68,12 @@ public abstract class EqualModifier<T> extends DataModifier<T>{
             }catch(Exception ignored){
                 return false;
             }
+        }
+    }
+
+    public static class ColorModifier extends StringModifier{
+        public ColorModifier(){
+            builder = new ColorBuilder(this);
         }
     }
 }
