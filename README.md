@@ -10,10 +10,13 @@ Enjoy making your own patch!
 
 - [x] Edit number, string 
 - [x] Edit fields in Seq, ObjectSet, ObjectMap
-- [ ] Add new object in Seq, ObjectSet, ObjectMap   
-- [ ] Export easy-reading json
+- [ ] Add new object in Seq, ObjectSet, ObjectMap.
+- [ ] Remove object in ObjectMap.
+- [x] Export easy-reading json.
 
+- [ ] Edit color, Interp, Attribute fields.
+- [ ] Edit consumer.
 
 ## TODO
 
-- [ ] Weapons name list
+- [ ] Accessible Weapons' name list

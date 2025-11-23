@@ -41,7 +41,7 @@ public class NodeData{
         this.object = object;
         this.meta = meta;
 
-        isSign = Structs.contains(ModifierSign.all, sign -> sign.sign.equals(name));
+        isSign = Structs.contains(ModifierSign.all, this::isSign);
     }
 
     public static NodeData getRootData(){

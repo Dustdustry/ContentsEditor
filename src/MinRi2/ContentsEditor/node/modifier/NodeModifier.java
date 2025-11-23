@@ -130,7 +130,8 @@ public class NodeModifier{
     }
 
     public static NodeData addDynamicChild(NodeData node, @Nullable Class<?> type){
-        if(!(PatchJsonIO.isArray(node) || PatchJsonIO.isMap(node))) return null;
+        NodeData checkNode = node.isSign() ? node.parentData : node;
+        if(!(PatchJsonIO.isArray(checkNode) || PatchJsonIO.isMap(checkNode))) return null;
 
         Object object = node.getObject();
         if(node.isSign()) object = node.parentData.getObject();

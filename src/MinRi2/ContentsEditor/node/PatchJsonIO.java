@@ -173,13 +173,15 @@ public class PatchJsonIO{
         }
     }
 
-    public static JsonValue toJson(NodeData data){
-        JsonValue jsonData = data.getJsonData();
+    public static JsonValue toJson(NodeData node){
+        JsonValue jsonData = node.getJsonData();
         if(jsonData == null) return new JsonValue(ValueType.object);
-        return toJson(data, new JsonValue(jsonData.type()));
+        JsonValue linkedValue = linkJsonData(node, new JsonValue(jsonData.type()));
+        processData(node, linkedValue);
+        return linkedValue;
     }
 
-    private static JsonValue toJson(NodeData node, JsonValue json){
+    private static JsonValue linkJsonData(NodeData node, JsonValue json){
         JsonValue data = node.getJsonData();
         if(data == null) return json;
 
@@ -188,20 +190,26 @@ public class PatchJsonIO{
             return json;
         }
 
-        processData(node, json);
-
         for(NodeData child : node.getChildren()){
             JsonValue childData = child.getJsonData();
             if(childData == null) continue;
             JsonValue childJson = new JsonValue(childData.type());
             addChildValue(json, child.name, childJson);
-            toJson(child, childJson);
+            linkJsonData(child, childJson);
         }
 
         return json;
     }
 
     private static void processData(NodeData node, JsonValue value){
+        for(NodeData child : node.getChildren()){
+            JsonValue childData = child.getJsonData();
+            if(childData == null) continue;
+            JsonValue linkedValue = value.get(child.name);
+            if(linkedValue == null) continue;
+            processData(child, linkedValue);
+        }
+
         if(value.type() == ValueType.object && (node.isSign(ModifierSign.MODIFY) || node.isDynamic())){
             Class<?> type = getTypeOut(node);
             if(type != null && !partialTypes.contains(type)){
@@ -219,20 +227,27 @@ public class PatchJsonIO{
         }else if(node.isSign(ModifierSign.PLUS)){
             JsonValue effectValue = value.parent;
             JsonValue effectParentValue = effectValue.parent;
-            removeValue(value);
 
-            // clean empty object
-            if(effectValue.child == null) removeValue(effectValue);
-
-            // plus syntax must be used in dot syntax
-            addChildValue(effectParentValue, effectValue.name + "." + value.name, value);
+            if(isMap(node.parentData)){
+                removeValue(value);
+                for(JsonValue child : value){
+                    addChildValue(effectValue, child.name, child);
+                }
+            }else{
+                removeValue(value);
+                // clean empty object
+                if(effectValue.child == null) removeValue(effectValue);
+                // plus syntax must be used in dot syntax
+                addChildValue(effectParentValue, effectValue.name + "." + value.name, value);
+            }
         }
     }
 
     public static JsonValue simplifyPatch(JsonValue value){
         int singleCount = 1;
         JsonValue singleEnd = value;
-        while(!singleEnd.isArray() && singleEnd.child != null && singleEnd.child.next == null && singleEnd.child.prev == null && !singleEnd.has("type")){
+        while(singleEnd.child != null && singleEnd.child.next == null && singleEnd.child.prev == null){
+            if(singleEnd.isArray() || singleEnd.has("type")) break;
             singleEnd = singleEnd.child;
             singleCount++;
         }
