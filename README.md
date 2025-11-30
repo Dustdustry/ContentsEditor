@@ -16,6 +16,7 @@ Enjoy making your own patch!
 
 - [ ] Edit color, Interp, Attribute fields.
 - [ ] Edit consumer.
+- [ ] Edit Effect
 
 ## TODO
 

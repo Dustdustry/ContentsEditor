@@ -5,9 +5,12 @@ import MinRi2.ContentsEditor.node.modifier.EqualModifier.*;
 import arc.func.*;
 import arc.graphics.*;
 import arc.struct.*;
+import arc.struct.ObjectMap.*;
 import arc.util.*;
 import arc.util.pooling.*;
 import arc.util.serialization.*;
+import arc.util.serialization.Json.*;
+import arc.util.serialization.JsonValue.*;
 import mindustry.*;
 import mindustry.ctype.*;
 import mindustry.entities.abilities.*;
@@ -180,6 +183,15 @@ public class NodeModifier{
         return null;
     }
 
+    private static JsonValue buildExampleValue(Class<?> type){
+        String typeName = ClassMap.classes.findKey(type, true);
+        if(typeName == null) typeName = type.getName();
+
+        JsonValue value = new JsonValue(ValueType.object);
+        value.addChild("type", new JsonValue(typeName));
+        return value;
+    }
+
     public static Object getExample(Class<?> base, Class<?> type){
         if(type.isArray()) return Reflect.newArray(type.getComponentType(), 0);
 
@@ -197,10 +209,10 @@ public class NodeModifier{
         }
 
         if(example == null){
-            String typeName = ClassMap.classes.findKey(type, true);
-            if(typeName == null) typeName = type.getName();
             try{
-                example = PatchJsonIO.getParser().getJson().fromJson(base, "{" + "type:" + typeName + "}");
+                Json parserJson = PatchJsonIO.getParser().getJson();
+                // Invoke internalRead to skip null fields checking.
+                example = Reflect.invoke(parserJson, "internalRead", new Object[]{base, null, buildExampleValue(type), null}, Class.class, Class.class, JsonValue.class, Class.class);
             }catch(Exception ignored){
                 return null;
             }

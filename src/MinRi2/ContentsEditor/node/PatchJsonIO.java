@@ -13,6 +13,8 @@ import mindustry.type.*;
 import mindustry.world.*;
 import mindustry.world.consumers.*;
 
+import java.lang.reflect.*;
+
 public class PatchJsonIO{
     public static final int simplifySingleCount = 3;
 
@@ -82,6 +84,17 @@ public class PatchJsonIO{
 
     public static boolean isMap(NodeData data){
         return ClassHelper.isMap(getTypeOut(data));
+    }
+
+    public static boolean fieldRequired(NodeData child){
+        if(child.meta == null) return false;
+        Field field = child.meta.field;
+        if(field == null || field.getType().isPrimitive()) return false;
+        if(MappableContent.class.isAssignableFrom(field.getType())){
+            return !field.getType().isAnnotationPresent(Nullable.class) && child.getObject() == null;
+        }
+
+        return false;
     }
 
     public static void parseJson(NodeData data, String patch){

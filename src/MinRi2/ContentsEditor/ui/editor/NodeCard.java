@@ -205,7 +205,12 @@ public class NodeCard extends Table{
     }
 
     private void addEditTable(Table table, NodeData node, DataModifier<?> modifier){
-        Color modifiedColor = EPalettes.modified, unmodifiedColor = node.isDynamic() ? EPalettes.add : EPalettes.unmodified;
+        Color modifiedColor = EPalettes.modified, unmodifiedColor0 = EPalettes.unmodified;
+        if(node.isDynamic()) unmodifiedColor0 = EPalettes.add;
+        else if(isRequired(node)) unmodifiedColor0 = EPalettes.required;
+
+        Color unmodifiedColor = unmodifiedColor0;
+
         table.table(t -> {
             t.table(infoTable -> {
                 infoTable.left();
@@ -229,9 +234,15 @@ public class NodeCard extends Table{
         });
     }
 
+    private static boolean isRequired(NodeData node){
+        return node.getJsonData() == null && PatchJsonIO.fieldRequired(node);
+    }
+
     private void addChildButton(Table table, NodeData node){
         ImageButtonStyle style = EStyles.cardButtoni;
-        if(node.isDynamic()){
+        if(isRequired(node)){
+            style = EStyles.cardRequiredi;
+        }else if(node.isDynamic()){
             style = EStyles.addButtoni;
         }else if(data.hasJsonChild(node.name)){
             style = EStyles.cardModifiedButtoni;
@@ -315,6 +326,10 @@ public class NodeCard extends Table{
             }
         }
 
+        if(isRequired(data)){
+            table.image(Icon.infoCircle).size(48f).tooltip("##mayRequired");
+        }
+
         if(data.hasSign(ModifierSign.REMOVE)){
             table.button(Icon.cancelSmall, Styles.clearNonei, () -> {}).size(48f);
         }
@@ -387,10 +402,15 @@ public class NodeCard extends Table{
 
         for(var entry : mappedChildren){
             var children = entry.value;
-            if(children.any()) children.sort(Structs.comps(
-                Structs.comparingBool(n -> n.getJsonData() == null),
-                Structs.comparingInt(NodeModifier::getModifierIndex).reversed()
-            ));
+            if(children.any()) children.sort(
+            Structs.comps(
+                Structs.comparingBool(n -> !isRequired(n)),
+                Structs.comps(
+                    Structs.comparingBool(n -> n.getJsonData() == null),
+                    Structs.comparingInt(NodeModifier::getModifierIndex).reversed()
+                )
+            )
+            );
         }
 
         return mappedChildren;
