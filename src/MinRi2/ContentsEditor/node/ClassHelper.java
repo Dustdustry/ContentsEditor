@@ -10,6 +10,10 @@ public class ClassHelper{
     }
 
     public static boolean isArray(Class<?> type){
+        return type != null && type.isArray();
+    }
+
+    public static boolean isArrayLike(Class<?> type){
         return type != null && (type.isArray() || Seq.class.isAssignableFrom(type) || ObjectSet.class.isAssignableFrom(type));
     }
 

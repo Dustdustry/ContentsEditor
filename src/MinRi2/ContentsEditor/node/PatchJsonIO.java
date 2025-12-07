@@ -14,7 +14,6 @@ import mindustry.world.*;
 import mindustry.world.consumers.*;
 
 import java.lang.reflect.*;
-import java.util.*;
 
 public class PatchJsonIO{
     public static final int simplifySingleCount = 3;
@@ -83,6 +82,10 @@ public class PatchJsonIO{
         return ClassHelper.isArray(getTypeOut(data));
     }
 
+    public static boolean isArrayLike(NodeData data){
+        return ClassHelper.isArrayLike(getTypeOut(data));
+    }
+
     public static boolean isMap(NodeData data){
         return ClassHelper.isMap(getTypeOut(data));
     }
@@ -113,7 +116,7 @@ public class PatchJsonIO{
         }
 
         if(value.isArray()){
-            if(!isArray(data)) return;
+            if(!isArrayLike(data)) return;
 
             data.setJsonData(value);
             for(JsonValue elemValue : value){
