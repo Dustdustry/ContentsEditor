@@ -11,7 +11,7 @@ import mindustry.ui.dialogs.*;
 
 public class ClassSelector extends BaseDialog{
     private Boolf<Class<?>> consumer;
-    private final ObjectSet<Class<?>> classes = new ObjectSet<>();
+    private final Seq<Class<?>> classes = new Seq<>();
 
     public ClassSelector(){
         super("##@class-selector");
@@ -28,6 +28,8 @@ public class ClassSelector extends BaseDialog{
         cont.pane(pane).scrollX(false).width(width).grow();
 
         int index = 0, columns = (int)(width / 240f);
+
+        classes.sortComparing(Class::getSimpleName);
         for(Class<?> clazz : classes){
             pane.button(table -> {
                 table.add(clazz.getSimpleName());
