@@ -52,7 +52,7 @@ public class NodeModifier{
 
     public static DataModifier<?> getModifier(NodeData node){
         if(canModify(node)){
-            Class<?> type = PatchJsonIO.getTypeOut(node);
+            Class<?> type = PatchJsonIO.getTypeIn(node);
             for(ModifierConfig config : modifyConfig){
                 if(config.canModify(type)) return config.getModifier(node);
             }
@@ -63,7 +63,7 @@ public class NodeModifier{
     public static int getModifierIndex(NodeData node){
         if(canModify(node)){
             int i = 0;
-            Class<?> type = PatchJsonIO.getTypeOut(node);
+            Class<?> type = PatchJsonIO.getTypeIn(node);
             for(ModifierConfig config : modifyConfig){
                 if(config.canModify(type)) return i;
                 i++;
@@ -125,10 +125,14 @@ public class NodeModifier{
     }
 
     public static NodeData addDynamicChild(NodeData node){
-        return addDynamicChild(node, null);
+        return addDynamicChild(node, null, null);
     }
 
     public static NodeData addDynamicChild(NodeData node, @Nullable Class<?> type){
+        return addDynamicChild(node, type, null);
+    }
+
+    public static NodeData addDynamicChild(NodeData node, @Nullable Class<?> type, @Nullable String keyName){
         NodeData checkNode = node.isSign() ? node.parentData : node;
         if(!(PatchJsonIO.isArray(checkNode) || PatchJsonIO.isMap(checkNode))) return null;
 
@@ -159,13 +163,7 @@ public class NodeModifier{
         }
 
         if(object instanceof ObjectMap<?,?>){
-            String name = "<key>";
-            if(MappableContent.class.isAssignableFrom(meta.keyType)){
-                ContentType contentType = PatchJsonIO.getContentType(meta.keyType);
-                if(contentType != null){
-                    name = PatchJsonIO.getKeyName(Vars.content.getBy(contentType).first());
-                }
-            }
+            String name = keyName == null ? "<key>" : keyName;
 
             Object example = getExample(baseType, actualElemType);
             if(example == null) return null;

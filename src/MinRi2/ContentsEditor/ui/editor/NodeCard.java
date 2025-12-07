@@ -2,6 +2,7 @@ package MinRi2.ContentsEditor.ui.editor;
 
 import MinRi2.ContentsEditor.node.*;
 import MinRi2.ContentsEditor.node.modifier.*;
+import MinRi2.ContentsEditor.node.modifier.EqualModifier.*;
 import MinRi2.ContentsEditor.ui.*;
 import arc.*;
 import arc.graphics.*;
@@ -12,6 +13,7 @@ import arc.scene.ui.layout.*;
 import arc.struct.*;
 import arc.util.*;
 import mindustry.*;
+import mindustry.ctype.*;
 import mindustry.gen.*;
 import mindustry.graphics.*;
 import mindustry.ui.*;
@@ -187,7 +189,6 @@ public class NodeCard extends Table{
                 }else{
                     addChildButton(cont, child);
                 }
-
                 if(++index % columns == 0){
                     cont.row();
                 }
@@ -280,8 +281,22 @@ public class NodeCard extends Table{
             Cell<?> horizontalLine = b.image().height(4f).color(Color.darkGray).growX();
             horizontalLine.colspan(b.getColumns());
         }, EStyles.addButtoni, () -> {
-            NodeModifier.addDynamicChild(plusData);
-            rebuildNodesTable();
+            Class<?> keyType = plusData.meta.keyType;
+            if(keyType != null){
+                ContentType type = PatchJsonIO.getContentType(keyType);
+                if(type == null){
+                    // TODO: unsupported key type
+                    return;
+                }
+                EUI.selector.select(type, c -> true, c -> {
+                    NodeModifier.addDynamicChild(plusData, null, PatchJsonIO.getKeyName(c));
+                    rebuildNodesTable();
+                    return true;
+                });
+            }else{
+                NodeModifier.addDynamicChild(plusData);
+                rebuildNodesTable();
+            }
         });
     }
 

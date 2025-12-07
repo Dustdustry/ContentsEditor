@@ -14,6 +14,7 @@ import mindustry.world.*;
 import mindustry.world.consumers.*;
 
 import java.lang.reflect.*;
+import java.util.*;
 
 public class PatchJsonIO{
     public static final int simplifySingleCount = 3;
@@ -154,19 +155,49 @@ public class PatchJsonIO{
             if(childValue.name == null) continue;
 
             NodeData current = data;
-            for(String name : childValue.name.split("\\.")){
-                NodeData childData = current.getChild(name);
-                if(childData == null){
-                    Log.warn("Couldn't resolve @.@", current.name, name);
-                    current.clearJson();
-                    continue outer;
+            String[] childNames = childValue.name.split("\\.");
+            for(int i = 0; i < childNames.length; i++){
+                NodeData childData = current.getChild(childNames[i]);
+                if(childData != null){
+                    current = childData;
+                    continue;
                 }
-                current = childData;
+
+                // map's key only support when in the end
+                if(i == childNames.length - 1 && isMap(current)){
+                    current = parseDynamicChild(current, childNames[i], childValue);
+                    if(current == null) continue outer;
+                    break;
+                }
+
+                Log.warn("Couldn't resolve @.@", current.name, childNames[i]);
+                continue outer;
             }
 
             childValue.setName(current.name);
             parseJson(current, childValue);
         }
+    }
+
+    private static NodeData parseDynamicChild(NodeData data, String childName, JsonValue value){
+        if(isMap(data)){
+            Class<?> keyType = data.meta.keyType;
+
+            NodeData plusData = data.getChild(ModifierSign.PLUS.sign);
+            Object obj = getParser().getJson().readValue(keyType, new JsonValue(childName));
+            if(obj == null) return null;
+
+            JsonValue typeValue = value.remove("type");
+            Class<?> type = typeValue != null && typeValue.isString() ? ClassMap.classes.get(typeValue.asString()) : null;
+            if(type != null && keyType.isAssignableFrom(type)){
+                Log.warn("Type '@' is unsustainable to '@'.", type, keyType);
+                return null;
+            }
+
+            return NodeModifier.addDynamicChild(plusData, type, childName);
+        }
+
+        return null;
     }
 
     private static void desugarJson(NodeData data, JsonValue value){
@@ -215,12 +246,9 @@ public class PatchJsonIO{
     }
 
     private static void processData(NodeData node, JsonValue value){
-        for(NodeData child : node.getChildren()){
-            JsonValue childData = child.getJsonData();
-            if(childData == null) continue;
-            JsonValue linkedValue = value.get(child.name);
-            if(linkedValue == null) continue;
-            processData(child, linkedValue);
+        for(JsonValue childValue : value){
+            NodeData child = node.getChild(childValue.name);
+            if(child != null) processData(child, childValue);
         }
 
         if(value.type() == ValueType.object && (node.isSign(ModifierSign.MODIFY) || node.isDynamic())){
@@ -243,9 +271,7 @@ public class PatchJsonIO{
 
             if(isMap(node.parentData)){
                 removeValue(value);
-                for(JsonValue child : value){
-                    addChildValue(effectValue, child.name, child);
-                }
+                addChildValue(effectValue, value.child.name, value.child);
             }else{
                 removeValue(value);
                 // clean empty object
